@@ -1,0 +1,55 @@
+appId: any
+---
+# ============================================================
+# OPPO POPUP HANDLER
+# Handles dev.mobile.maestro installation popups on OPPO devices
+# Include this at the START of any flow that might see OPPO popups
+# ============================================================
+
+# Handle "Continue installation" button for first Maestro APK
+- runFlow:
+    when:
+      visible:
+        text: "Continue installation"
+    commands:
+      - tapOn: "Continue installation"
+
+# Handle Close button after installation (bottom button with id)
+- runFlow:
+    when:
+      visible:
+        id: "com.oplus.stdsp:id/btn_finish"
+    commands:
+      - tapOn:
+          id: "com.oplus.stdsp:id/btn_finish"
+
+# Handle Close button by text (backup)
+- runFlow:
+    when:
+      visible:
+        text: "Close"
+    commands:
+      - tapOn: "Close"
+
+# Handle second Maestro APK popup (dev.mobile.maestro.test)
+- runFlow:
+    when:
+      visible:
+        text: "Continue installation"
+    commands:
+      - tapOn: "Continue installation"
+
+- runFlow:
+    when:
+      visible:
+        id: "com.oplus.stdsp:id/btn_finish"
+    commands:
+      - tapOn:
+          id: "com.oplus.stdsp:id/btn_finish"
+
+- runFlow:
+    when:
+      visible:
+        text: "Close"
+    commands:
+      - tapOn: "Close"

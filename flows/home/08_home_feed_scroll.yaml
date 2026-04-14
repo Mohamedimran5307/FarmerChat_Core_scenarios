@@ -1,0 +1,34 @@
+appId: any
+name: "TC08 - Read Full Advice and Related Questions"
+tags:
+  - home
+  - regression
+---
+- runFlow: ../../helpers/complete_onboarding.yaml
+
+- scrollUntilVisible:
+    element:
+      text: "Learn More"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    text: "Learn More"
+    index: 0
+
+- extendedWaitUntil:
+    visible:
+      id: "chat_read_full_advice_button"
+    timeout: 30000
+- tapOn:
+    id: "chat_read_full_advice_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "chat_thread_list"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: "Related questions"
+    direction: DOWN
+    timeout: 90000
+- assertVisible: "Related questions"

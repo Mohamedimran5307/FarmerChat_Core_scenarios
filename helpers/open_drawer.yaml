@@ -1,0 +1,9 @@
+appId: any
+---
+- tapOn:
+    id: "home_hamburger_button"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "drawer_content"
+    timeout: 5000

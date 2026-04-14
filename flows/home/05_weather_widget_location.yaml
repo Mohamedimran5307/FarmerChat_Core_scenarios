@@ -1,0 +1,66 @@
+appId: any
+name: "TC05 - Weather Widget, Grant Location, Verify Feed Cards"
+tags:
+  - home
+  - regression
+---
+- runFlow: ../../helpers/complete_onboarding.yaml
+
+# Tap on weather widget button
+- tapOn:
+    id: "home_weather_button"
+
+# Handle "Share Location" interstitial screen (button at bottom)
+- runFlow:
+    when:
+      visible:
+        text: "Get local farm advice"
+    commands:
+      - tapOn:
+          text: "Share Location"
+          index: 1
+
+# Handle location permission popup - "While using the app"
+- runFlow:
+    when:
+      visible:
+        text: "While using the app"
+    commands:
+      - tapOn: "While using the app"
+
+# Alternative: Handle by permission button ID
+- runFlow:
+    when:
+      visible:
+        id: "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+    commands:
+      - tapOn:
+          id: "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+
+- runFlow:
+    when:
+      visible:
+        text: "No thanks"
+    commands:
+      - tapOn: "No thanks"
+
+# Wait for weather response to load (text includes emojis: "🌥️ 3-Day Weather Forecast 🌥️")
+- extendedWaitUntil:
+    visible:
+      text: ".*Weather Forecast.*"
+    timeout: 20000
+
+# Go back to home screen using back button
+- back
+
+- extendedWaitUntil:
+    visible:
+      id: "home_screen"
+    timeout: 10000
+
+- scrollUntilVisible:
+    element:
+      text: "Learn More"
+    direction: DOWN
+    timeout: 15000
+- assertVisible: "Learn More"

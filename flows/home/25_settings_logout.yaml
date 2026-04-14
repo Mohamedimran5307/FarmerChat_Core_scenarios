@@ -1,0 +1,82 @@
+appId: any
+name: "TC27 - Settings Logout"
+tags:
+  - settings
+  - auth
+  - regression
+---
+- runFlow: ../../helpers/complete_onboarding.yaml
+
+# ── Sign up with phone number ──
+- tapOn:
+    id: "home_hamburger_button"
+- extendedWaitUntil:
+    visible:
+      id: "drawer_signup_button"
+    timeout: 5000
+- tapOn:
+    id: "drawer_signup_button"
+
+# "Sign up with phone number" button only appears if user hasn't asked 3+ questions
+# Otherwise it goes directly to auth_phone_input screen
+- runFlow:
+    when:
+      visible:
+        text: "Sign up with phone number"
+    commands:
+      - tapOn: "Sign up with phone number"
+
+- extendedWaitUntil:
+    visible:
+      id: "auth_phone_input"
+    timeout: 10000
+- tapOn:
+    id: "auth_phone_input"
+- inputText: "7013733824"
+- tapOn: "Send via SMS"
+
+- extendedWaitUntil:
+    visible:
+      id: "auth_otp_input"
+    timeout: 30000
+- tapOn:
+    id: "auth_otp_input"
+- inputText: "1111"
+- tapOn:
+    id: "auth_submit_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "account_success_screen"
+    timeout: 30000
+- tapOn:
+    id: "account_success_continue"
+
+- extendedWaitUntil:
+    visible:
+      id: "home_screen"
+    timeout: 15000
+
+# ── Open drawer → Settings ──
+- tapOn:
+    id: "home_hamburger_button"
+- extendedWaitUntil:
+    visible:
+      id: "drawer_settings_button"
+    timeout: 5000
+- tapOn:
+    id: "drawer_settings_button"
+- extendedWaitUntil:
+    visible:
+      id: "settings_screen"
+    timeout: 5000
+
+# ── Tap Logout in Settings ──
+- tapOn:
+    id: "settings_logout_button"
+
+# ── Assert navigated back to language screen ──
+- extendedWaitUntil:
+    visible:
+      id: "language_screen"
+    timeout: 15000

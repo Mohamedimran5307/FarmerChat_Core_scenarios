@@ -1,0 +1,132 @@
+appId: any
+---
+# Handle OPPO installation popups first
+- runFlow:
+    file: dismiss_oppo_popup.yaml
+
+# Dismiss notification permission dialog
+- runFlow:
+    when:
+      visible:
+        text: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+# Dismiss Privacy Policy popup
+- runFlow:
+    when:
+      visible:
+        text: "Privacy Policy"
+    commands:
+      - pressKey: back
+
+# If already on home screen, skip onboarding entirely
+- runFlow:
+    when:
+      visible:
+        id: "home_screen"
+    commands:
+      - assertVisible:
+          id: "home_screen"
+
+# Wait for language screen (reduced timeout)
+- extendedWaitUntil:
+    visible:
+      id: "language_screen"
+    timeout: 5000
+    optional: true
+
+# Handle error screen
+- runFlow:
+    when:
+      visible:
+        text: "Try again"
+    commands:
+      - tapOn: "Try again"
+
+# Proceed with onboarding if on language screen
+- runFlow:
+    when:
+      visible:
+        id: "language_screen"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "language_item_${LANGUAGE_CODE}"
+          timeout: 5000
+      - tapOn:
+          id: "language_item_${LANGUAGE_CODE}"
+      - extendedWaitUntil:
+          visible:
+            id: "language_start_button"
+          timeout: 5000
+      - tapOn:
+          id: "language_start_button"
+      - runFlow:
+          when:
+            visible:
+              id: "language_start_button"
+          commands:
+            - tapOn:
+                id: "language_start_button"
+
+# Handle notification permission after language selection
+- runFlow:
+    when:
+      visible:
+        id: "com.android.permissioncontroller:id/permission_allow_button"
+    commands:
+      - tapOn:
+          id: "com.android.permissioncontroller:id/permission_allow_button"
+
+- runFlow:
+    when:
+      visible:
+        text: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+# Skip name entry if shown
+- runFlow:
+    when:
+      visible:
+        text: "Skip for now"
+    commands:
+      - tapOn: "Skip for now"
+
+# Handle name screen if visible
+- runFlow:
+    when:
+      visible:
+        id: "name_save_button"
+    commands:
+      - tapOn:
+          id: "name_input"
+      - longPressOn:
+          id: "name_input"
+      - runFlow:
+          when:
+            visible:
+              text: "Select all"
+          commands:
+            - tapOn: "Select all"
+      - eraseText: 1
+      - inputText: "${USER_NAME}"
+      - hideKeyboard
+      - tapOn:
+          id: "name_save_button"
+
+# Skip location interstitial
+- runFlow:
+    when:
+      visible:
+        id: "location_interstitial_skip"
+    commands:
+      - tapOn:
+          id: "location_interstitial_skip"
+
+# Wait for home screen
+- extendedWaitUntil:
+    visible:
+      id: "home_screen"
+    timeout: 10000

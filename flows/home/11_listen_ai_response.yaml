@@ -1,0 +1,40 @@
+appId: any
+name: "TC14 - Listen to AI Response (TTS Audio Playback)"
+tags:
+  - home
+  - chat
+  - regression
+---
+- runFlow: ../../helpers/complete_onboarding.yaml
+
+- tapOn:
+    id: "home_type_button"
+- tapOn: "Ask about your farm..."
+- inputText: "What are common tomato diseases in Kenya"
+- extendedWaitUntil:
+    visible:
+      id: "text_input_send_button"
+    timeout: 5000
+- tapOn:
+    id: "text_input_send_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "chat_thread_list"
+    timeout: 60000
+- scrollUntilVisible:
+    element:
+      id: "chat_listen_button"
+    direction: DOWN
+    timeout: 90000
+
+- tapOn:
+    id: "chat_listen_button"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "chat_listen_button"
+- tapOn:
+    id: "chat_listen_button"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "chat_thread_list"
