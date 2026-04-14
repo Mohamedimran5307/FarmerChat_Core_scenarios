@@ -40,13 +40,13 @@ Automated UI test suite for the FarmerChat Android application using Maestro fra
 
 ## Key Test Scenarios (Execution Order 1-5)
 
-| ID | Name | Description |
-|----|------|-------------|
-| TC01 | Location-Based Personalization | Ensures the app captures user GPS via the weather widget and displays relevant content cards based on location |
-| TC02 | AI Chat Experience | Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions |
-| TC03 | Home Feed Usability | Confirms that users can smoothly scroll through the home feed and access all content cards without issues |
-| TC04 | Audio Response Feature | Ensures users can listen to AI responses using the text-to-speech feature |
-| TC05 | User Authentication & Logout | Verifies complete user flow including sign-up, login, and logout functionality |
+| ID | Name | Priority | Description |
+|----|------|----------|-------------|
+| TC01 | Location-Based Personalization | P0 | Ensures the app captures user GPS via the weather widget and displays relevant image questions and content cards based on location |
+| TC02 | AI Chat Experience | P0 | Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions |
+| TC03 | Home Feed Usability | P1 | Confirms that users can smoothly scroll through the home feed and access all content cards without issues |
+| TC04 | Audio Response Feature | P0 | Ensures users can listen to AI responses using the text-to-speech feature |
+| TC05 | User Authentication & Logout | P0 | Verifies complete user flow including sign-up, login, and logout functionality |
 
 ---
 
@@ -107,36 +107,69 @@ If no CLI tool is installed, the script will:
 
 ```json
 {
-  "report_metadata": {
-    "report_id": "Tester_Name_20260414_153000",
-    "generated_at": "2026-04-14T15:30:00"
-  },
-  "tester_info": {
-    "tester_name": "John Doe",
-    "machine_hostname": "Johns-MacBook",
-    "os_type": "Darwin"
-  },
-  "device_info": {
-    "device_id": "1a0a08f0",
-    "brand": "OPPO",
-    "model": "CPH2565",
-    "android_version": "16",
-    "sdk_version": "36"
-  },
-  "test_summary": {
-    "total_tests": 5,
+  "testSuite": "FarmerChat Core Scenarios",
+
+  "summary": {
+    "total": 5,
     "passed": 5,
     "failed": 0,
-    "pass_rate": "100%",
-    "total_duration_formatted": "8m 30s"
+    "pass_rate": "100%"
   },
-  "test_results": [
+
+  "device": {
+    "manufacturer": "Samsung",
+    "model": "Galaxy A54",
+    "android_version": "14"
+  },
+
+  "tester": "Imran",
+  "timestamp": "14 April 2026, 02:30 PM IST",
+
+  "testCases": [
     {
-      "test_id": "TC05",
-      "test_name": "Weather Widget Location",
-      "description": "Verifies weather widget functionality...",
+      "tc": "TC01",
+      "name": "Location-Based Personalization",
+      "description": "Ensures the app captures user GPS via the weather widget and displays relevant image questions and content cards based on location",
       "status": "PASSED",
-      "duration_seconds": 95
+      "priority": "P0",
+      "time_taken": "1m 42s",
+      "issue": ""
+    },
+    {
+      "tc": "TC02",
+      "name": "AI Chat Experience",
+      "description": "Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions",
+      "status": "PASSED",
+      "priority": "P0",
+      "time_taken": "2m 57s",
+      "issue": ""
+    },
+    {
+      "tc": "TC03",
+      "name": "Home Feed Usability",
+      "description": "Confirms that users can smoothly scroll through the home feed and access all content cards without issues",
+      "status": "PASSED",
+      "priority": "P1",
+      "time_taken": "1m 45s",
+      "issue": ""
+    },
+    {
+      "tc": "TC04",
+      "name": "Audio Response Feature",
+      "description": "Ensures users can listen to AI responses using the text-to-speech feature",
+      "status": "PASSED",
+      "priority": "P0",
+      "time_taken": "2m 33s",
+      "issue": ""
+    },
+    {
+      "tc": "TC05",
+      "name": "User Authentication & Logout",
+      "description": "Verifies complete user flow including sign-up, login, and logout functionality",
+      "status": "PASSED",
+      "priority": "P0",
+      "time_taken": "2m 24s",
+      "issue": ""
     }
   ]
 }
