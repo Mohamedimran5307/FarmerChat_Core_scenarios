@@ -40,13 +40,13 @@ Automated UI test suite for the FarmerChat Android application using Maestro fra
 
 ## Key Test Scenarios (Execution Order 1-5)
 
-| ID | Name | Priority | Description |
-|----|------|----------|-------------|
-| TC01 | Location-Based Personalization | P0 | Ensures the app captures user GPS via the weather widget and displays relevant image questions and content cards based on location |
-| TC02 | AI Chat Experience | P0 | Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions |
-| TC03 | Home Feed Usability | P1 | Confirms that users can smoothly scroll through the home feed and access all content cards without issues |
-| TC04 | Audio Response Feature | P0 | Ensures users can listen to AI responses using the text-to-speech feature |
-| TC05 | User Authentication & Logout | P0 | Verifies complete user flow including sign-up, login, and logout functionality |
+| ID | Name | Description |
+|----|------|-------------|
+| TC01 | Location-Based Personalization | Ensures the app captures user GPS via the weather widget and displays relevant image questions and content cards based on location |
+| TC02 | AI Chat Experience | Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions |
+| TC03 | Home Feed Usability | Confirms that users can smoothly scroll through the home feed and access all content cards without issues |
+| TC04 | Audio Response Feature | Ensures users can listen to AI responses using the text-to-speech feature |
+| TC05 | User Authentication & Logout | Verifies complete user flow including sign-up, login, and logout functionality |
 
 ---
 
