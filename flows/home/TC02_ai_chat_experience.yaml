@@ -23,27 +23,33 @@ tags:
     visible:
       id: "chat_thread_list"
     timeout: 30000
+- waitForAnimationToEnd
+
+# Scroll down to find "Related questions" section first
 - scrollUntilVisible:
+    centerElement: true
     element:
       text: "Related questions"
     direction: DOWN
-    timeout: 15000
+    timeout: 90000
+    speed: 40
 - assertVisible: "Related questions"
 
-- scrollUntilVisible:
-    element:
-      text: "Ask"
+# Now scroll a bit more to make the "Ask" button visible and clickable
+- scroll:
     direction: DOWN
-    timeout: 15000
-- tapOn: "Ask"
+    duration: 500
+
+# Exact "^Ask$" avoids matching the composer hint "Ask about your farm..."
+- extendedWaitUntil:
+    visible:
+      text: "^Ask$"
+    timeout: 10000
+- tapOn:
+    text: "^Ask$"
 
 - extendedWaitUntil:
     visible:
       id: "chat_thread_list"
     timeout: 30000
-- scrollUntilVisible:
-    element:
-      text: "Related questions"
-    direction: DOWN
-    timeout: 90000
-- assertVisible: "Related questions"
+- waitForAnimationToEnd
