@@ -415,7 +415,7 @@
         <div class="header">
             <h1>🌾 FarmerChat Test Suite</h1>
             <p class="subtitle">Maestro Automated UI Testing - Setup Guide</p>
-            <span class="version-badge">Version 2.0 • April 2026</span>
+            <span class="version-badge">Version 2.1 • April 2026</span>
         </div>
         
         <div class="content">
@@ -456,7 +456,7 @@
                     <span style="font-size: 20px;">⚠️</span>
                     <div>
                         <h4 style="font-size: 14px; margin-bottom: 5px; color: #e65100; font-weight: 600;">Before Running</h4>
-                        <p style="font-size: 14px; color: #555; margin: 0;">Make sure: <strong>(1)</strong> Android device connected via USB, <strong>(2)</strong> USB Debugging enabled, <strong>(3)</strong> FarmerChat app installed on device</p>
+                        <p style="font-size: 14px; color: #555; margin: 0;">Make sure: <strong>(1)</strong> Android device connected via USB, <strong>(2)</strong> USB Debugging enabled, <strong>(3)</strong> FarmerChat app installed, <strong>(4)</strong> GPS mocked to Kenya using LocaEdit app</p>
                     </div>
                 </div>
             </div>
@@ -632,6 +632,96 @@ List of devices attached
             <div class="section">
                 <h2 class="section-title">
                     <span class="step-number">4</span>
+                    Mock GPS Location to Kenya (Using LocaEdit)
+                </h2>
+                
+                <p style="margin-bottom: 20px;">FarmerChat requires a Kenya location for testing. Follow these steps to mock GPS location:</p>
+                
+                <h3 style="font-size: 16px; color: #444; margin: 20px 0 15px;">Step 4.1: Install LocaEdit App</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Property</th>
+                            <th style="width: 70%;">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>App Name</strong></td>
+                            <td>LocaEdit - GPS Location Editor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Play Store</strong></td>
+                            <td><a href="https://play.google.com/store/apps/details?id=com.locaedit.mock" style="color: #2e7d32;">Download LocaEdit</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3 style="font-size: 16px; color: #444; margin: 20px 0 15px;">Step 4.2: Enable Mock Location in Developer Options</h3>
+                <ol class="steps-list">
+                    <li>Go to <strong>Settings</strong> → <strong>Developer Options</strong></li>
+                    <li>Scroll down to find <strong>"Select mock location app"</strong></li>
+                    <li>Select <strong>LocaEdit</strong> from the list</li>
+                </ol>
+                
+                <h3 style="font-size: 16px; color: #444; margin: 20px 0 15px;">Step 4.3: Set Location to Kenya</h3>
+                <ol class="steps-list">
+                    <li>Open <strong>LocaEdit</strong> app</li>
+                    <li>Search for <strong>"Nairobi, Kenya"</strong> or enter coordinates manually</li>
+                    <li>Use these coordinates for Nairobi:</li>
+                </ol>
+                
+                <table style="margin-top: 15px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Coordinate</th>
+                            <th style="width: 70%;">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Latitude</strong></td>
+                            <td><code>-1.286389</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Longitude</strong></td>
+                            <td><code>36.817223</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Location</strong></td>
+                            <td>Nairobi, Kenya</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 15px;">
+                    <ol class="steps-list" style="counter-reset: step-counter 3;">
+                        <li>Tap <strong>"Start"</strong> or <strong>"Play"</strong> button to enable mock location</li>
+                        <li>Keep LocaEdit running in the background during tests</li>
+                    </ol>
+                </div>
+                
+                <div class="info-box tip">
+                    <span class="icon">💡</span>
+                    <div>
+                        <h4>Verify Mock Location</h4>
+                        <p>Open Google Maps to confirm your location shows as Nairobi, Kenya before running tests.</p>
+                    </div>
+                </div>
+                
+                <div class="info-box warning">
+                    <span class="icon">⚠️</span>
+                    <div>
+                        <h4>Important</h4>
+                        <p>Keep LocaEdit running throughout the test execution. If mock location stops, location-based tests will fail.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 5 -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="step-number">5</span>
                     Install FarmerChat APK
                 </h2>
                 
@@ -665,10 +755,10 @@ List of devices attached
                 </div>
             </div>
             
-            <!-- Step 5 -->
+            <!-- Step 6 -->
             <div class="section">
                 <h2 class="section-title">
-                    <span class="step-number">5</span>
+                    <span class="step-number">6</span>
                     Clone the Test Repository
                 </h2>
                 
@@ -677,10 +767,10 @@ List of devices attached
 <span class="prompt">$</span> cd FarmerChat_Core_scenarios</div>
             </div>
             
-            <!-- Step 6 -->
+            <!-- Step 7 -->
             <div class="section">
                 <h2 class="section-title">
-                    <span class="step-number">6</span>
+                    <span class="step-number">7</span>
                     Run the Tests
                 </h2>
                 
