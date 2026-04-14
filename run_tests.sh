@@ -83,7 +83,7 @@ echo -e "  Build ID:        ${CYAN}$BUILD_ID${NC}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# DISABLE OPPO VERIFICATION (for OPPO/Realme/OnePlus devices)
+# DISABLE ADB VERIFICATION (for devices with app verification)
 # ─────────────────────────────────────────────────────────────────────────────
 echo -e "${BLUE}Configuring device for testing...${NC}"
 adb -s $DEVICE_ID shell settings put global verifier_verify_adb_installs 0 2>/dev/null || true
@@ -122,9 +122,9 @@ ensure_maestro_installed
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# DISMISS OPPO POPUP FUNCTION
+# DISMISS SYSTEM POPUP FUNCTION
 # ─────────────────────────────────────────────────────────────────────────────
-dismiss_oppo_popup() {
+dismiss_system_popup() {
   for attempt in 1 2 3 4; do
     adb -s $DEVICE_ID shell uiautomator dump /sdcard/ui_check.xml 2>/dev/null
     local ui_dump=$(adb -s $DEVICE_ID shell cat /sdcard/ui_check.xml 2>/dev/null)
@@ -155,7 +155,7 @@ setup_test() {
   adb -s $DEVICE_ID forward tcp:7001 tcp:7001 2>/dev/null
   adb -s $DEVICE_ID shell am start --activity-clear-task -n $APP_ID/org.digitalgreen.farmer.chatbot.MainActivity 2>/dev/null
   sleep 3
-  dismiss_oppo_popup
+  dismiss_system_popup
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -163,11 +163,11 @@ setup_test() {
 # Format: TC_ID|FILE|NAME|DESCRIPTION|PRIORITY
 # ─────────────────────────────────────────────────────────────────────────────
 declare -a TEST_CASES=(
-  "TC01|05_weather_widget_location|Location-Based Personalization|Ensures the app captures user GPS via the weather widget and displays relevant image questions and content cards based on location|P0"
-  "TC02|06_type_question_ai_response|AI Chat Experience|Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions|P0"
-  "TC03|08_home_feed_scroll|Home Feed Usability|Confirms that users can smoothly scroll through the home feed and access all content cards without issues|P1"
-  "TC04|11_listen_ai_response|Audio Response Feature|Ensures users can listen to AI responses using the text-to-speech feature|P0"
-  "TC05|25_settings_logout|User Authentication & Logout|Verifies complete user flow including sign-up, login, and logout functionality|P0"
+  "TC01|TC01_location_based_personalization|Location-Based Personalization|Ensures the app captures user GPS via the weather widget and displays relevant image questions and content cards based on location|P0"
+  "TC02|TC02_ai_chat_experience|AI Chat Experience|Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions|P0"
+  "TC03|TC03_home_feed_usability|Home Feed Usability|Confirms that users can smoothly scroll through the home feed and access all content cards without issues|P1"
+  "TC04|TC04_audio_response_feature|Audio Response Feature|Ensures users can listen to AI responses using the text-to-speech feature|P0"
+  "TC05|TC05_user_authentication_logout|User Authentication & Logout|Verifies complete user flow including sign-up, login, and logout functionality|P0"
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ for test_case in "${TEST_CASES[@]}"; do
   (
     for i in $(seq 1 20); do
       sleep 3
-      dismiss_oppo_popup 2>/dev/null
+      dismiss_system_popup 2>/dev/null
     done
   ) &
   POPUP_PID=$!

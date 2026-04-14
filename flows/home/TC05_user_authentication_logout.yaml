@@ -1,5 +1,5 @@
 appId: any
-name: "TC27 - Settings Logout"
+name: "TC05 - User Authentication & Logout"
 tags:
   - settings
   - auth

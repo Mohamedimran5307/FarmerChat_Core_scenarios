@@ -1,5 +1,5 @@
 appId: any
-name: "TC06 - Type Question, Get AI Response, Tap Related Question"
+name: "TC02 - AI Chat Experience"
 tags:
   - home
   - chat
@@ -27,7 +27,7 @@ tags:
     element:
       text: "Related questions"
     direction: DOWN
-    timeout: 90000
+    timeout: 15000
 - assertVisible: "Related questions"
 
 - scrollUntilVisible:

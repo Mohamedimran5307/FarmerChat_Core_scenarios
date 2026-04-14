@@ -1,5 +1,5 @@
 appId: any
-name: "TC08 - Read Full Advice and Related Questions"
+name: "TC03 - Home Feed Usability"
 tags:
   - home
   - regression

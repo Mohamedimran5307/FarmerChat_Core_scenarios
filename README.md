@@ -1,6 +1,6 @@
 # FarmerChat Maestro Test Suite
 
-Automated UI test suite for the FarmerChat Android application using Maestro framework. Optimized for OPPO/ColorOS devices with Android 16+.
+Automated UI test suite for the FarmerChat Android application using Maestro framework. Supports multiple Android device manufacturers.
 
 ## Quick Start for Testers
 
@@ -187,14 +187,14 @@ maestro-stable/
 │   └── env.yaml              # Environment variables
 ├── flows/
 │   └── home/
-│       ├── 05_weather_widget_location.yaml
-│       ├── 06_type_question_ai_response.yaml
-│       ├── 08_home_feed_scroll.yaml
-│       ├── 11_listen_ai_response.yaml
-│       └── 25_settings_logout.yaml
+│       ├── TC01_location_based_personalization.yaml
+│       ├── TC02_ai_chat_experience.yaml
+│       ├── TC03_home_feed_usability.yaml
+│       ├── TC04_audio_response_feature.yaml
+│       └── TC05_user_authentication_logout.yaml
 ├── helpers/
 │   ├── complete_onboarding.yaml
-│   ├── dismiss_oppo_popup.yaml
+│   ├── dismiss_system_popup.yaml
 │   ├── open_drawer.yaml
 │   └── navigate_to_settings.yaml
 └── reports/                  # Generated test reports (gitignored)
@@ -209,8 +209,8 @@ maestro-stable/
 - Run `adb devices` to verify connection
 - Try `adb kill-server && adb start-server`
 
-### OPPO Installation Popup
-- The script automatically handles OPPO's app verification popups
+### System Installation Popup
+- The script automatically handles device manufacturer app verification popups
 - If stuck, manually tap "Continue installation" then "Close"
 
 ### Maestro Connection Issues

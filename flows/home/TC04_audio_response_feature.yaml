@@ -1,5 +1,5 @@
 appId: any
-name: "TC14 - Listen to AI Response (TTS Audio Playback)"
+name: "TC04 - Audio Response Feature"
 tags:
   - home
   - chat

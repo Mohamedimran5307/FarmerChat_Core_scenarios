@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # DEVICE SETUP SCRIPT
-# Run this ONCE before running tests to install Maestro APKs on OPPO devices
+# Run this ONCE before running tests to install Maestro APKs on Android devices
 # =============================================================================
 
 DEVICE_ID="${1:-$(adb devices | grep -v 'List' | head -1 | awk '{print $1}')}"
@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}           MAESTRO DEVICE SETUP FOR OPPO${NC}"
+echo -e "${BLUE}           MAESTRO DEVICE SETUP${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 echo ""
 
@@ -25,7 +25,7 @@ fi
 echo -e "Device: ${YELLOW}$DEVICE_ID${NC}"
 echo ""
 
-# Function to dismiss OPPO popup
+# Function to dismiss system popup
 dismiss_popup() {
   for attempt in 1 2 3 4 5 6 7 8; do
     sleep 2
@@ -73,7 +73,7 @@ fi
 # Install dev.mobile.maestro if missing
 if [ -z "$MAESTRO_APP" ]; then
   echo -e "${BLUE}Installing dev.mobile.maestro...${NC}"
-  echo -e "  ${YELLOW}Watch device screen - approve OPPO popup if shown${NC}"
+  echo -e "  ${YELLOW}Watch device screen - approve popup if shown${NC}"
   adb -s $DEVICE_ID install -r -g /tmp/maestro-app.apk &
   INSTALL_PID=$!
   
@@ -93,7 +93,7 @@ fi
 # Install dev.mobile.maestro.test if missing
 if [ -z "$MAESTRO_TEST" ]; then
   echo -e "${BLUE}Installing dev.mobile.maestro.test...${NC}"
-  echo -e "  ${YELLOW}Watch device screen - approve OPPO popup if shown${NC}"
+  echo -e "  ${YELLOW}Watch device screen - approve popup if shown${NC}"
   adb -s $DEVICE_ID install -r -g /tmp/maestro-server.apk &
   INSTALL_PID=$!
   

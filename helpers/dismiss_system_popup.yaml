@@ -1,9 +1,9 @@
 appId: any
 ---
 # ============================================================
-# OPPO POPUP HANDLER
-# Handles dev.mobile.maestro installation popups on OPPO devices
-# Include this at the START of any flow that might see OPPO popups
+# SYSTEM POPUP HANDLER
+# Handles dev.mobile.maestro installation popups on Android devices
+# Include this at the START of any flow that might see system popups
 # ============================================================
 
 # Handle "Continue installation" button for first Maestro APK

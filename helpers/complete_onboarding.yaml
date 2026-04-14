@@ -1,8 +1,8 @@
 appId: any
 ---
-# Handle OPPO installation popups first
+# Handle system installation popups first
 - runFlow:
-    file: dismiss_oppo_popup.yaml
+    file: dismiss_system_popup.yaml
 
 # Dismiss notification permission dialog
 - runFlow:

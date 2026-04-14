@@ -1,5 +1,5 @@
 appId: any
-name: "TC05 - Weather Widget, Grant Location, Verify Feed Cards"
+name: "TC01 - Location-Based Personalization"
 tags:
   - home
   - regression
