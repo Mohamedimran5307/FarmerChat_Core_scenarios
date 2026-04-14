@@ -19,13 +19,14 @@ tags:
 - tapOn:
     id: "text_input_send_button"
 
+# Wait for AI response
 - extendedWaitUntil:
     visible:
       id: "chat_thread_list"
     timeout: 30000
 - waitForAnimationToEnd
 
-# Scroll down to find "Related questions" section first
+# Scroll down to find "Related questions" section
 - scrollUntilVisible:
     centerElement: true
     element:
@@ -35,21 +36,28 @@ tags:
     speed: 40
 - assertVisible: "Related questions"
 
-# Now scroll a bit more to make the "Ask" button visible and clickable
-- scroll:
-    direction: DOWN
-    duration: 500
+# Swipe up a bit to make the "Ask" button visible
+- swipe:
+    direction: UP
+    duration: 300
 
-# Exact "^Ask$" avoids matching the composer hint "Ask about your farm..."
-- extendedWaitUntil:
-    visible:
-      text: "^Ask$"
-    timeout: 10000
+# Tap Ask button (exact match to avoid "Ask about your farm...")
 - tapOn:
     text: "^Ask$"
 
+# Wait for new response after tapping related question
 - extendedWaitUntil:
     visible:
       id: "chat_thread_list"
     timeout: 30000
 - waitForAnimationToEnd
+
+# Verify Related questions appear again after follow-up
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Related questions"
+    direction: DOWN
+    timeout: 90000
+    speed: 40
+- assertVisible: "Related questions"
