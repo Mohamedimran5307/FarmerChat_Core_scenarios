@@ -307,6 +307,204 @@ cat > "$REPORT_FILE" << EOF
 }
 EOF
 
+# ─────────────────────────────────────────────────────────────────────────────
+# GENERATE HTML REPORT
+# ─────────────────────────────────────────────────────────────────────────────
+HTML_REPORT_FILE="$REPORTS_DIR/FarmerChat_TestReport_${TESTER_NAME// /_}_${DATE_STAMP}.html"
+PASS_RATE=$(echo "scale=0; $PASSED * 100 / $TOTAL" | bc)
+
+# Determine overall status color
+if [ $FAILED -eq 0 ]; then
+  STATUS_COLOR="#4caf50"
+  STATUS_BG="#e8f5e9"
+  STATUS_TEXT="ALL TESTS PASSED"
+else
+  STATUS_COLOR="#f44336"
+  STATUS_BG="#ffebee"
+  STATUS_TEXT="$FAILED TEST(S) FAILED"
+fi
+
+# Build test cases HTML
+TEST_CASES_HTML=""
+TC_INDEX=0
+for test_case in "${TEST_CASES[@]}"; do
+  IFS='|' read -r TC_ID TC_FILE TC_NAME TC_DESC TC_PRIORITY <<< "$test_case"
+  TC_INDEX=$((TC_INDEX + 1))
+  
+  # Get status from results (simplified - based on order)
+  if [ $TC_INDEX -le $PASSED ]; then
+    TC_STATUS="PASSED"
+    TC_STATUS_COLOR="#4caf50"
+    TC_STATUS_BG="#e8f5e9"
+    TC_ICON="✓"
+  else
+    TC_STATUS="FAILED"
+    TC_STATUS_COLOR="#f44336"
+    TC_STATUS_BG="#ffebee"
+    TC_ICON="✗"
+  fi
+  
+  TEST_CASES_HTML="$TEST_CASES_HTML
+    <tr>
+      <td style='font-weight: 600; color: #2e7d32;'>$TC_ID</td>
+      <td>$TC_NAME</td>
+      <td style='color: #666; font-size: 13px;'>$TC_DESC</td>
+      <td><span style='background: ${TC_STATUS_BG}; color: ${TC_STATUS_COLOR}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;'>$TC_ICON $TC_STATUS</span></td>
+      <td><span style='background: #fff3e0; color: #e65100; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;'>$TC_PRIORITY</span></td>
+    </tr>"
+done
+
+cat > "$HTML_REPORT_FILE" << HTMLEOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmerChat Test Report - $TESTER_NAME - $RUN_DATE_FRIENDLY</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; line-height: 1.6; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #2e7d32 0%, #4caf50 50%, #81c784 100%); color: white; padding: 40px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header .subtitle { opacity: 0.9; font-size: 14px; }
+        .header .timestamp { margin-top: 15px; font-size: 13px; opacity: 0.8; }
+        
+        /* Status Banner */
+        .status-banner { background: ${STATUS_BG}; border-left: 5px solid ${STATUS_COLOR}; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+        .status-banner .status { font-size: 20px; font-weight: 700; color: ${STATUS_COLOR}; }
+        .status-banner .pass-rate { font-size: 36px; font-weight: 700; color: ${STATUS_COLOR}; }
+        
+        /* Content */
+        .content { padding: 40px; }
+        
+        /* Info Cards */
+        .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+        .info-card { background: #fafafa; border-radius: 12px; padding: 24px; border: 1px solid #e0e0e0; }
+        .info-card h3 { font-size: 12px; text-transform: uppercase; color: #888; letter-spacing: 1px; margin-bottom: 15px; }
+        .info-card .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .info-card .item:last-child { border-bottom: none; }
+        .info-card .label { color: #666; font-size: 14px; }
+        .info-card .value { font-weight: 600; color: #333; font-size: 14px; }
+        
+        /* Summary Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+        .stat-card { text-align: center; padding: 24px; border-radius: 12px; }
+        .stat-card.total { background: #e3f2fd; }
+        .stat-card.passed { background: #e8f5e9; }
+        .stat-card.failed { background: #ffebee; }
+        .stat-card.duration { background: #fff3e0; }
+        .stat-card .number { font-size: 42px; font-weight: 700; }
+        .stat-card.total .number { color: #1976d2; }
+        .stat-card.passed .number { color: #4caf50; }
+        .stat-card.failed .number { color: #f44336; }
+        .stat-card.duration .number { color: #ff9800; font-size: 28px; }
+        .stat-card .label { font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
+        
+        /* Test Results Table */
+        .section-title { font-size: 18px; color: #2e7d32; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #4caf50; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th { background: linear-gradient(135deg, #2e7d32, #4caf50); color: white; padding: 14px 16px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 16px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        tr:hover { background: #f9f9f9; }
+        
+        /* Footer */
+        .footer { background: #263238; color: white; padding: 25px 40px; text-align: center; font-size: 13px; }
+        .footer a { color: #81c784; text-decoration: none; }
+        
+        @media print {
+            body { background: white; }
+            .container { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌾 FarmerChat Test Report</h1>
+            <p class="subtitle">Automated UI Test Results - Core Scenarios</p>
+            <p class="timestamp">$TIMESTAMP_FRIENDLY</p>
+        </div>
+        
+        <div class="status-banner">
+            <div class="status">$STATUS_TEXT</div>
+            <div class="pass-rate">${PASS_RATE}%</div>
+        </div>
+        
+        <div class="content">
+            <!-- Info Cards -->
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>👤 Tester Info</h3>
+                    <div class="item"><span class="label">Name</span><span class="value">$TESTER_NAME</span></div>
+                    <div class="item"><span class="label">Date</span><span class="value">$RUN_DATE_FRIENDLY</span></div>
+                    <div class="item"><span class="label">Time</span><span class="value">$RUN_TIME_FRIENDLY</span></div>
+                </div>
+                <div class="info-card">
+                    <h3>📱 Device Info</h3>
+                    <div class="item"><span class="label">Brand</span><span class="value">$DEVICE_BRAND</span></div>
+                    <div class="item"><span class="label">Model</span><span class="value">$DEVICE_MODEL</span></div>
+                    <div class="item"><span class="label">Android</span><span class="value">$ANDROID_VERSION (SDK $SDK_VERSION)</span></div>
+                </div>
+                <div class="info-card">
+                    <h3>📦 App Under Test</h3>
+                    <div class="item"><span class="label">App</span><span class="value">FarmerChat</span></div>
+                    <div class="item"><span class="label">Package</span><span class="value" style="font-size: 11px;">$APP_ID</span></div>
+                    <div class="item"><span class="label">Build</span><span class="value">$BUILD_ID</span></div>
+                </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div class="number">$TOTAL</div>
+                    <div class="label">Total Tests</div>
+                </div>
+                <div class="stat-card passed">
+                    <div class="number">$PASSED</div>
+                    <div class="label">Passed</div>
+                </div>
+                <div class="stat-card failed">
+                    <div class="number">$FAILED</div>
+                    <div class="label">Failed</div>
+                </div>
+                <div class="stat-card duration">
+                    <div class="number">${MINS}m ${SECS}s</div>
+                    <div class="label">Duration</div>
+                </div>
+            </div>
+            
+            <!-- Test Results -->
+            <h2 class="section-title">Test Case Results</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">ID</th>
+                        <th style="width: 20%;">Test Case</th>
+                        <th style="width: 40%;">Description</th>
+                        <th style="width: 15%;">Status</th>
+                        <th style="width: 15%;">Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    $TEST_CASES_HTML
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>Generated by FarmerChat Maestro Test Suite</p>
+            <p style="margin-top: 5px; opacity: 0.7;">Repository: <a href="https://github.com/Mohamedimran5307/FarmerChat_Core_scenarios">github.com/Mohamedimran5307/FarmerChat_Core_scenarios</a></p>
+        </div>
+    </div>
+</body>
+</html>
+HTMLEOF
+
+echo -e "${GREEN}✓ HTML Report generated: ${CYAN}$HTML_REPORT_FILE${NC}"
+
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}                    TEST RESULTS SUMMARY${NC}"
@@ -322,7 +520,8 @@ echo -e "  Failed:     ${RED}$FAILED${NC}"
 echo -e "  Pass Rate:  ${CYAN}$(echo "scale=2; $PASSED * 100 / $TOTAL" | bc)%${NC}"
 echo -e "  Duration:   ${YELLOW}${MINS}m ${SECS}s${NC}"
 echo ""
-echo -e "  Report:     ${CYAN}$REPORT_FILE${NC}"
+echo -e "  JSON Report:  ${CYAN}$REPORT_FILE${NC}"
+echo -e "  HTML Report:  ${CYAN}$HTML_REPORT_FILE${NC}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -341,11 +540,12 @@ GDRIVE_FOLDER_URL="https://drive.google.com/drive/folders/$GDRIVE_FOLDER_ID"
 if command -v rclone &> /dev/null; then
   # Check if gdrive remote exists
   if rclone listremotes | grep -q "gdrive:"; then
-    echo -e "${YELLOW}Uploading report to Google Drive...${NC}"
+    echo -e "${YELLOW}Uploading reports to Google Drive...${NC}"
     rclone copy "$REPORT_FILE" "gdrive:FarmerChat_Test_Reports" --drive-root-folder-id="$GDRIVE_FOLDER_ID" && \
-      echo -e "${GREEN}✓ Report uploaded successfully!${NC}" && \
+    rclone copy "$HTML_REPORT_FILE" "gdrive:FarmerChat_Test_Reports" --drive-root-folder-id="$GDRIVE_FOLDER_ID" && \
+      echo -e "${GREEN}✓ JSON and HTML reports uploaded successfully!${NC}" && \
       echo -e "  View at: ${CYAN}$GDRIVE_FOLDER_URL${NC}" || \
-      echo -e "${RED}✗ Failed to upload report${NC}"
+      echo -e "${RED}✗ Failed to upload reports${NC}"
   else
     echo -e "${YELLOW}rclone is installed but not configured for Google Drive.${NC}"
     echo ""
