@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmerChat Maestro Test Suite - Setup Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.7;
+            color: #333;
+            background: #f8f9fa;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 50%, #81c784 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        
+        .header .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .header .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-top: 15px;
+        }
+        
+        /* Content */
+        .content {
+            padding: 40px 50px;
+        }
+        
+        /* Section */
+        .section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            color: #2e7d32;
+            border-bottom: 3px solid #4caf50;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-title .step-number {
+            background: #4caf50;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #2e7d32, #4caf50);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            padding: 14px 16px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e8e8e8;
+            vertical-align: top;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:nth-child(even) {
+            background: #f9fdf9;
+        }
+        
+        tr:hover {
+            background: #e8f5e9;
+        }
+        
+        /* Code blocks */
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px 24px;
+            border-radius: 8px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        .code-block::before {
+            content: attr(data-label);
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .code-block .prompt {
+            color: #4caf50;
+        }
+        
+        .code-block .comment {
+            color: #6a9955;
+        }
+        
+        code {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        
+        .info-box.tip {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .info-box.warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+        
+        .info-box.success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .info-box .icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .info-box .content {
+            padding: 0;
+        }
+        
+        .info-box h4 {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .info-box p {
+            font-size: 14px;
+            color: #555;
+            margin: 0;
+        }
+        
+        /* Steps list */
+        .steps-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .steps-list li {
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+        
+        .steps-list li::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: #4caf50;
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .steps-list {
+            counter-reset: step-counter;
+        }
+        
+        /* Checklist */
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .checklist li {
+            padding: 10px 0 10px 35px;
+            position: relative;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+        }
+        
+        .checklist li:last-child {
+            border-bottom: none;
+        }
+        
+        .checklist li::before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: #4caf50;
+            font-size: 18px;
+        }
+        
+        /* Two column layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .column-box {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 24px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .column-box h4 {
+            color: #2e7d32;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4caf50;
+        }
+        
+        /* Project structure */
+        .tree {
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            background: #fafafa;
+            padding: 20px 24px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .tree-item {
+            padding: 4px 0;
+            color: #555;
+        }
+        
+        .tree-folder {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+        
+        .tree-file {
+            color: #666;
+        }
+        
+        .tree-comment {
+            color: #999;
+            font-style: italic;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #263238;
+            color: white;
+            padding: 30px 50px;
+            text-align: center;
+        }
+        
+        .footer p {
+            font-size: 14px;
+            opacity: 0.8;
+            margin: 5px 0;
+        }
+        
+        .footer a {
+            color: #81c784;
+            text-decoration: none;
+        }
+        
+        /* Priority badges */
+        .priority {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .priority.p0 {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .priority.p1 {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        /* Status badges */
+        .status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .status.required {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #ccc, transparent);
+            margin: 40px 0;
+        }
+        
+        /* Page break */
+        .page-break {
+            page-break-before: always;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🌾 FarmerChat Test Suite</h1>
+            <p class="subtitle">Maestro Automated UI Testing - Setup Guide</p>
+            <span class="version-badge">Version 2.0 • April 2026</span>
+        </div>
+        
+        <div class="content">
+            <!-- Overview -->
+            <div class="section">
+                <h2 class="section-title">Overview</h2>
+                <p style="font-size: 15px; color: #555; margin-bottom: 20px;">
+                    This guide provides step-by-step instructions to set up and run the FarmerChat automated UI test suite on your local machine using the Maestro framework.
+                </p>
+                
+                <div class="info-box success">
+                    <span class="icon">✓</span>
+                    <div>
+                        <h4>What You'll Achieve</h4>
+                        <p>Run 5 automated test cases covering core FarmerChat functionality including location services, AI chat, and user authentication.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Start -->
+            <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); margin: 0 -50px 40px -50px; padding: 30px 50px; border-top: 3px solid #4caf50; border-bottom: 3px solid #4caf50; page-break-inside: avoid;">
+                <h2 style="font-size: 22px; color: #2e7d32; margin-bottom: 20px;">⚡ Quick Start (Just 2 Commands!)</h2>
+                <p style="font-size: 15px; color: #555; margin-bottom: 20px;">
+                    For experienced users, run these two commands to get started immediately:
+                </p>
+                
+                <div style="background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 15px; border: 1px solid #a5d6a7;">
+                    <h4 style="color: #2e7d32; margin-bottom: 12px; font-size: 14px; font-weight: 600;">📦 Command 1: Setup (one-time only)</h4>
+                    <div style="background: #1e1e1e; color: #d4d4d4; padding: 15px 20px; border-radius: 6px; font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; overflow-x: auto; word-wrap: break-word; white-space: pre-wrap;">brew install android-platform-tools && curl -Ls "https://get.maestro.mobile.dev" | bash && git clone https://github.com/Mohamedimran5307/FarmerChat_Core_scenarios.git && cd FarmerChat_Core_scenarios</div>
+                </div>
+                
+                <div style="background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 15px; border: 1px solid #a5d6a7;">
+                    <h4 style="color: #2e7d32; margin-bottom: 12px; font-size: 14px; font-weight: 600;">▶️ Command 2: Run Tests</h4>
+                    <div style="background: #1e1e1e; color: #d4d4d4; padding: 15px 20px; border-radius: 6px; font-family: 'SF Mono', 'Consolas', monospace; font-size: 13px;">./run_tests.sh "Your Name"</div>
+                </div>
+                
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 0 8px 8px 0; padding: 15px 20px; display: flex; gap: 12px; align-items: flex-start;">
+                    <span style="font-size: 20px;">⚠️</span>
+                    <div>
+                        <h4 style="font-size: 14px; margin-bottom: 5px; color: #e65100; font-weight: 600;">Before Running</h4>
+                        <p style="font-size: 14px; color: #555; margin: 0;">Make sure: <strong>(1)</strong> Android device connected via USB, <strong>(2)</strong> USB Debugging enabled, <strong>(3)</strong> FarmerChat app installed on device</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Prerequisites -->
+            <div class="section">
+                <h2 class="section-title">Prerequisites</h2>
+                
+                <h3 style="font-size: 16px; color: #444; margin: 20px 0 15px;">Hardware Requirements</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Item</th>
+                            <th style="width: 70%;">Requirement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Computer</strong></td>
+                            <td>macOS (Intel or Apple Silicon) or Linux</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Android Device</strong></td>
+                            <td>Physical device with USB debugging enabled</td>
+                        </tr>
+                        <tr>
+                            <td><strong>USB Cable</strong></td>
+                            <td>For connecting Android device to computer</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3 style="font-size: 16px; color: #444; margin: 20px 0 15px;">Software Requirements</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Software</th>
+                            <th style="width: 20%;">Version</th>
+                            <th style="width: 35%;">Purpose</th>
+                            <th style="width: 20%;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ADB</strong></td>
+                            <td>Latest</td>
+                            <td>Android device communication</td>
+                            <td><span class="status required">Required</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Maestro CLI</strong></td>
+                            <td>Latest</td>
+                            <td>Test automation framework</td>
+                            <td><span class="status required">Required</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Git</strong></td>
+                            <td>Latest</td>
+                            <td>Clone test repository</td>
+                            <td><span class="status required">Required</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>FarmerChat APK</strong></td>
+                            <td>Latest</td>
+                            <td>Application under test</td>
+                            <td><span class="status required">Required</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Step 1 -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="step-number">1</span>
+                    Install ADB (Android Debug Bridge)
+                </h2>
+                
+                <div class="two-columns">
+                    <div class="column-box">
+                        <h4>🍎 macOS</h4>
+                        <div class="code-block" data-label="Terminal">
+<span class="prompt">$</span> brew install android-platform-tools</div>
+                    </div>
+                    <div class="column-box">
+                        <h4>🐧 Linux (Ubuntu/Debian)</h4>
+                        <div class="code-block" data-label="Terminal">
+<span class="prompt">$</span> sudo apt update
+<span class="prompt">$</span> sudo apt install adb</div>
+                    </div>
+                </div>
+                
+                <div class="info-box tip">
+                    <span class="icon">💡</span>
+                    <div>
+                        <h4>Verify Installation</h4>
+                        <p>Run <code>adb version</code> — you should see output like: <code>Android Debug Bridge version 1.0.41</code></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="step-number">2</span>
+                    Install Maestro CLI
+                </h2>
+                
+                <p style="margin-bottom: 15px;">Run the following command on macOS or Linux:</p>
+                
+                <div class="code-block" data-label="Terminal">
+<span class="prompt">$</span> curl -Ls "https://get.maestro.mobile.dev" | bash</div>
+                
+                <div class="info-box warning">
+                    <span class="icon">⚠️</span>
+                    <div>
+                        <h4>Add to PATH (if needed)</h4>
+                        <p>If the <code>maestro</code> command is not found, add this line to your <code>~/.zshrc</code> or <code>~/.bashrc</code>:</p>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+export PATH="$PATH:$HOME/.maestro/bin"</div>
+                    </div>
+                </div>
+                
+                <div class="info-box tip">
+                    <span class="icon">💡</span>
+                    <div>
+                        <h4>Verify Installation</h4>
+                        <p>Run <code>maestro --version</code> to confirm successful installation.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="page-break"></div>
+            
+            <!-- Step 3 -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="step-number">3</span>
+                    Enable USB Debugging on Android Device
+                </h2>
+                
+                <p style="margin-bottom: 20px;">Follow these steps on your Android device:</p>
+                
+                <ol class="steps-list">
+                    <li>Go to <strong>Settings</strong> → <strong>About Phone</strong></li>
+                    <li>Tap <strong>Build Number</strong> 7 times to enable Developer Options</li>
+                    <li>Go back to <strong>Settings</strong> → <strong>Developer Options</strong></li>
+                    <li>Enable <strong>USB Debugging</strong> toggle</li>
+                    <li>Connect device to computer via USB cable</li>
+                    <li>Tap <strong>Allow</strong> when prompted for USB debugging permission on device</li>
+                </ol>
+                
+                <div class="info-box tip">
+                    <span class="icon">💡</span>
+                    <div>
+                        <h4>Verify Device Connection</h4>
+                        <p>Run the command below. Your device should appear in the list:</p>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+<span class="prompt">$</span> adb devices
+
+<span class="comment"># Expected output:</span>
+List of devices attached
+1a0a08f0    device</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 4 -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="step-number">4</span>
+                    Install FarmerChat APK
+                </h2>
+                
+                <p style="margin-bottom: 15px;">Ensure the FarmerChat app is installed on your device.</p>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Property</th>
+                            <th style="width: 70%;">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Package Name</strong></td>
+                            <td><code>org.digitalgreen.farmer.chat</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Install Command</strong></td>
+                            <td><code>adb install path/to/farmerchat.apk</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="info-box warning">
+                    <span class="icon">⚠️</span>
+                    <div>
+                        <h4>APK Not Available?</h4>
+                        <p>Contact your team lead to obtain the latest FarmerChat APK file.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 5 -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="step-number">5</span>
+                    Clone the Test Repository
+                </h2>
+                
+                <div class="code-block" data-label="Terminal">
+<span class="prompt">$</span> git clone https://github.com/Mohamedimran5307/FarmerChat_Core_scenarios.git
+<span class="prompt">$</span> cd FarmerChat_Core_scenarios</div>
+            </div>
+            
+            <!-- Step 6 -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="step-number">6</span>
+                    Run the Tests
+                </h2>
+                
+                <div class="two-columns">
+                    <div class="column-box">
+                        <h4>Basic Run</h4>
+                        <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Will prompt for tester name</p>
+                        <div class="code-block" data-label="Terminal">
+<span class="prompt">$</span> ./run_tests.sh</div>
+                    </div>
+                    <div class="column-box">
+                        <h4>With Tester Name</h4>
+                        <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Provide name as argument</p>
+                        <div class="code-block" data-label="Terminal">
+<span class="prompt">$</span> ./run_tests.sh "Your Name"</div>
+                    </div>
+                </div>
+                
+                <div class="info-box success">
+                    <span class="icon">✓</span>
+                    <div>
+                        <h4>Test Reports</h4>
+                        <p>After completion, a JSON report will be generated in the <code>reports/</code> folder with detailed results.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Test Cases -->
+            <div class="section">
+                <h2 class="section-title">Test Cases</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">ID</th>
+                            <th style="width: 25%;">Test Case</th>
+                            <th style="width: 50%;">Description</th>
+                            <th style="width: 15%;">Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>TC01</strong></td>
+                            <td>Location-Based Personalization</td>
+                            <td>Validates GPS capture via weather widget and location-based content display</td>
+                            <td><span class="priority p0">P0 - Critical</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>TC02</strong></td>
+                            <td>AI Chat Experience</td>
+                            <td>Tests farming questions and AI-generated responses with follow-up suggestions</td>
+                            <td><span class="priority p0">P0 - Critical</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>TC03</strong></td>
+                            <td>Home Feed Usability</td>
+                            <td>Confirms smooth scrolling through home feed and content card access</td>
+                            <td><span class="priority p1">P1 - High</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>TC04</strong></td>
+                            <td>Audio Response Feature</td>
+                            <td>Tests text-to-speech functionality for AI responses</td>
+                            <td><span class="priority p0">P0 - Critical</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>TC05</strong></td>
+                            <td>User Authentication & Logout</td>
+                            <td>Verifies complete sign-up, login, and logout user flow</td>
+                            <td><span class="priority p0">P0 - Critical</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="page-break"></div>
+            
+            <!-- Project Structure -->
+            <div class="section">
+                <h2 class="section-title">Project Structure</h2>
+                
+                <div class="tree">
+                    <div class="tree-item"><span class="tree-folder">FarmerChat_Core_scenarios/</span></div>
+                    <div class="tree-item">├── <span class="tree-file">run_tests.sh</span> <span class="tree-comment"># Main test runner script</span></div>
+                    <div class="tree-item">├── <span class="tree-file">setup_device.sh</span> <span class="tree-comment"># Device setup utility</span></div>
+                    <div class="tree-item">├── <span class="tree-folder">config/</span></div>
+                    <div class="tree-item">│   └── <span class="tree-file">env.yaml</span> <span class="tree-comment"># Environment variables</span></div>
+                    <div class="tree-item">├── <span class="tree-folder">flows/</span></div>
+                    <div class="tree-item">│   └── <span class="tree-folder">home/</span></div>
+                    <div class="tree-item">│       ├── <span class="tree-file">TC01_location_based_personalization.yaml</span></div>
+                    <div class="tree-item">│       ├── <span class="tree-file">TC02_ai_chat_experience.yaml</span></div>
+                    <div class="tree-item">│       ├── <span class="tree-file">TC03_home_feed_usability.yaml</span></div>
+                    <div class="tree-item">│       ├── <span class="tree-file">TC04_audio_response_feature.yaml</span></div>
+                    <div class="tree-item">│       └── <span class="tree-file">TC05_user_authentication_logout.yaml</span></div>
+                    <div class="tree-item">├── <span class="tree-folder">helpers/</span></div>
+                    <div class="tree-item">│   ├── <span class="tree-file">complete_onboarding.yaml</span></div>
+                    <div class="tree-item">│   ├── <span class="tree-file">dismiss_system_popup.yaml</span></div>
+                    <div class="tree-item">│   ├── <span class="tree-file">open_drawer.yaml</span></div>
+                    <div class="tree-item">│   └── <span class="tree-file">navigate_to_settings.yaml</span></div>
+                    <div class="tree-item">└── <span class="tree-folder">reports/</span> <span class="tree-comment"># Generated test reports</span></div>
+                </div>
+            </div>
+            
+            <!-- Quick Reference -->
+            <div class="section">
+                <h2 class="section-title">Quick Reference Commands</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">Command</th>
+                            <th style="width: 60%;">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>adb devices</code></td>
+                            <td>List all connected Android devices</td>
+                        </tr>
+                        <tr>
+                            <td><code>adb kill-server && adb start-server</code></td>
+                            <td>Restart ADB server (fixes connection issues)</td>
+                        </tr>
+                        <tr>
+                            <td><code>maestro --version</code></td>
+                            <td>Check Maestro CLI version</td>
+                        </tr>
+                        <tr>
+                            <td><code>./run_tests.sh</code></td>
+                            <td>Run all test cases</td>
+                        </tr>
+                        <tr>
+                            <td><code>./run_tests.sh "Name"</code></td>
+                            <td>Run tests with tester name</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Troubleshooting -->
+            <div class="section">
+                <h2 class="section-title">Troubleshooting</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Issue</th>
+                            <th style="width: 70%;">Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>No Android device connected</strong></td>
+                            <td>
+                                • Ensure USB Debugging is enabled<br>
+                                • Check cable connection<br>
+                                • Run: <code>adb kill-server && adb start-server</code><br>
+                                • Try a different USB port or cable
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Maestro command not found</strong></td>
+                            <td>
+                                • Add to PATH: <code>export PATH="$PATH:$HOME/.maestro/bin"</code><br>
+                                • Re-run the Maestro installation script
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tests timing out</strong></td>
+                            <td>
+                                • Ensure stable internet connection on device<br>
+                                • Keep device screen unlocked during tests<br>
+                                • Verify FarmerChat app is working properly
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>System popup blocking tests</strong></td>
+                            <td>
+                                • Script handles these automatically<br>
+                                • If stuck, manually tap "Continue installation" then "Close"
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Repository:</strong> <a href="https://github.com/Mohamedimran5307/FarmerChat_Core_scenarios">github.com/Mohamedimran5307/FarmerChat_Core_scenarios</a></p>
+            <p>For issues or questions, contact the QA team or raise an issue in the repository.</p>
+            <p style="margin-top: 15px; opacity: 0.6;">Last Updated: April 2026</p>
+        </div>
+    </div>
+</body>
+</html>
