@@ -347,45 +347,55 @@ echo -e "${BLUE}                  UPLOADING TO GOOGLE DRIVE${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 echo ""
 
-# Check if gdrive or rclone is available
-if command -v gdrive &> /dev/null; then
-  echo -e "${YELLOW}Uploading report using gdrive...${NC}"
-  FOLDER_ID="${GDRIVE_FOLDER_ID:-}"
-  if [ -n "$FOLDER_ID" ]; then
-    gdrive files upload --parent "$FOLDER_ID" "$REPORT_FILE" && \
-      echo -e "${GREEN}✓ Report uploaded to Google Drive${NC}" || \
+# Google Drive folder ID for FarmerChat test reports
+GDRIVE_FOLDER_ID="1Bs15iX32PLRe_fX7-OfXofnQwL5wiwkb"
+GDRIVE_FOLDER_URL="https://drive.google.com/drive/folders/$GDRIVE_FOLDER_ID"
+
+# Check if rclone is configured
+if command -v rclone &> /dev/null; then
+  # Check if gdrive remote exists
+  if rclone listremotes | grep -q "gdrive:"; then
+    echo -e "${YELLOW}Uploading report to Google Drive...${NC}"
+    rclone copy "$REPORT_FILE" "gdrive:FarmerChat_Test_Reports" --drive-root-folder-id="$GDRIVE_FOLDER_ID" && \
+      echo -e "${GREEN}✓ Report uploaded successfully!${NC}" && \
+      echo -e "  View at: ${CYAN}$GDRIVE_FOLDER_URL${NC}" || \
       echo -e "${RED}✗ Failed to upload report${NC}"
   else
-    gdrive files upload "$REPORT_FILE" && \
-      echo -e "${GREEN}✓ Report uploaded to Google Drive (root folder)${NC}" || \
-      echo -e "${RED}✗ Failed to upload report${NC}"
-  fi
-elif command -v rclone &> /dev/null; then
-  echo -e "${YELLOW}Uploading report using rclone...${NC}"
-  REMOTE_PATH="${RCLONE_REMOTE:-gdrive}:FarmerChat_Test_Reports"
-  rclone copy "$REPORT_FILE" "$REMOTE_PATH" && \
-    echo -e "${GREEN}✓ Report uploaded to Google Drive${NC}" || \
-    echo -e "${RED}✗ Failed to upload report${NC}"
-else
-  echo -e "${YELLOW}Google Drive CLI not found.${NC}"
-  echo ""
-  echo "To enable automatic upload, install one of:"
-  echo "  1. gdrive: https://github.com/glotlabs/gdrive"
-  echo "  2. rclone: https://rclone.org/drive/"
-  echo ""
-  echo -e "Manual upload: ${CYAN}$REPORT_FILE${NC}"
-  echo ""
-  
-  # Offer to open Google Drive in browser
-  echo -e "${CYAN}Would you like to open Google Drive to upload manually? (y/n):${NC} "
-  read -r OPEN_DRIVE
-  if [ "$OPEN_DRIVE" = "y" ] || [ "$OPEN_DRIVE" = "Y" ]; then
+    echo -e "${YELLOW}rclone is installed but not configured for Google Drive.${NC}"
+    echo ""
+    echo "Run this command to configure Google Drive access:"
+    echo -e "  ${CYAN}rclone config${NC}"
+    echo ""
+    echo "Then choose:"
+    echo "  - n (new remote)"
+    echo "  - Name: gdrive"
+    echo "  - Storage: drive (Google Drive)"
+    echo "  - Follow the prompts to authenticate"
+    echo ""
+    echo -e "After setup, run tests again to auto-upload."
+    echo ""
+    echo -e "${YELLOW}Opening Google Drive for manual upload...${NC}"
     if [ "$(uname)" = "Darwin" ]; then
-      open "https://drive.google.com/drive/folders/"
+      open "$GDRIVE_FOLDER_URL"
     elif [ "$(uname)" = "Linux" ]; then
-      xdg-open "https://drive.google.com/drive/folders/" 2>/dev/null || echo "Please open https://drive.google.com manually"
+      xdg-open "$GDRIVE_FOLDER_URL" 2>/dev/null
     fi
+    echo -e "Report file: ${CYAN}$REPORT_FILE${NC}"
   fi
+else
+  echo -e "${YELLOW}rclone not installed.${NC}"
+  echo ""
+  echo "Install rclone for automatic uploads:"
+  echo -e "  ${CYAN}brew install rclone${NC}  (macOS)"
+  echo -e "  ${CYAN}curl https://rclone.org/install.sh | sudo bash${NC}  (Linux)"
+  echo ""
+  echo -e "${YELLOW}Opening Google Drive for manual upload...${NC}"
+  if [ "$(uname)" = "Darwin" ]; then
+    open "$GDRIVE_FOLDER_URL"
+  elif [ "$(uname)" = "Linux" ]; then
+    xdg-open "$GDRIVE_FOLDER_URL" 2>/dev/null
+  fi
+  echo -e "Report file: ${CYAN}$REPORT_FILE${NC}"
 fi
 
 echo ""
