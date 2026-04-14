@@ -11,7 +11,7 @@ set -e
 # ─────────────────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPORTS_DIR="$SCRIPT_DIR/reports"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+DATE_STAMP=$(date +%d%b%Y)
 APP_ID="org.digitalgreen.farmer.chat"
 
 # Colors
@@ -277,7 +277,7 @@ SECS=$((TOTAL_DURATION % 60))
 # ─────────────────────────────────────────────────────────────────────────────
 # GENERATE JSON REPORT (Stakeholder-friendly format)
 # ─────────────────────────────────────────────────────────────────────────────
-REPORT_FILE="$REPORTS_DIR/test_report_${TESTER_NAME// /_}_${TIMESTAMP}.json"
+REPORT_FILE="$REPORTS_DIR/FarmerChat_TestReport_${TESTER_NAME// /_}_${DATE_STAMP}.json"
 RUN_DATE_FRIENDLY=$(date +"%d %B %Y")
 RUN_TIME_FRIENDLY=$(date +"%I:%M %p IST")
 TIMESTAMP_FRIENDLY="$RUN_DATE_FRIENDLY, $RUN_TIME_FRIENDLY"
