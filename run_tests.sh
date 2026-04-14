@@ -159,14 +159,14 @@ setup_test() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TEST CASE DEFINITIONS (ID, File, Name, Description - Stakeholder friendly)
+# KEY TEST SCENARIOS (Execution Order 1-5)
 # ─────────────────────────────────────────────────────────────────────────────
 declare -a TEST_CASES=(
-  "TC05|05_weather_widget_location|Weather Feature|User can view local weather forecast by sharing their location"
-  "TC06|06_type_question_ai_response|Ask Questions (Type)|User can type a farming question and receive helpful AI-powered answers with follow-up suggestions"
-  "TC08|08_home_feed_scroll|Home Screen Content|User can browse and scroll through farming tips and recommendations on the home screen"
-  "TC11|11_listen_ai_response|Listen to Answers|User can listen to AI responses using text-to-speech audio playback"
-  "TC25|25_settings_logout|Login and Logout|User can sign up with phone number, receive OTP, login successfully, and logout from settings"
+  "TC01|05_weather_widget_location|Location-Based Personalization|Ensures the app captures user GPS via the weather widget and displays relevant content cards based on location"
+  "TC02|06_type_question_ai_response|AI Chat Experience|Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions"
+  "TC03|08_home_feed_scroll|Home Feed Usability|Confirms that users can smoothly scroll through the home feed and access all content cards without issues"
+  "TC04|11_listen_ai_response|Audio Response Feature|Ensures users can listen to AI responses using the text-to-speech feature"
+  "TC05|25_settings_logout|User Authentication & Logout|Verifies complete user flow including sign-up, login, and logout functionality"
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
