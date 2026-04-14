@@ -540,12 +540,11 @@ GDRIVE_FOLDER_URL="https://drive.google.com/drive/folders/$GDRIVE_FOLDER_ID"
 if command -v rclone &> /dev/null; then
   # Check if gdrive remote exists
   if rclone listremotes | grep -q "gdrive:"; then
-    echo -e "${YELLOW}Uploading reports to Google Drive...${NC}"
+    echo -e "${YELLOW}Uploading JSON report to Google Drive...${NC}"
     rclone copy "$REPORT_FILE" "gdrive:FarmerChat_Test_Reports" --drive-root-folder-id="$GDRIVE_FOLDER_ID" && \
-    rclone copy "$HTML_REPORT_FILE" "gdrive:FarmerChat_Test_Reports" --drive-root-folder-id="$GDRIVE_FOLDER_ID" && \
-      echo -e "${GREEN}✓ JSON and HTML reports uploaded successfully!${NC}" && \
+      echo -e "${GREEN}✓ JSON report uploaded successfully!${NC}" && \
       echo -e "  View at: ${CYAN}$GDRIVE_FOLDER_URL${NC}" || \
-      echo -e "${RED}✗ Failed to upload reports${NC}"
+      echo -e "${RED}✗ Failed to upload report${NC}"
   else
     echo -e "${YELLOW}rclone is installed but not configured for Google Drive.${NC}"
     echo ""
