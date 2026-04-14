@@ -159,14 +159,15 @@ setup_test() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# KEY TEST SCENARIOS (Execution Order 1-5)
+# KEY TEST SCENARIOS (Execution Order 1-5) with Priority
+# Format: TC_ID|FILE|NAME|DESCRIPTION|PRIORITY
 # ─────────────────────────────────────────────────────────────────────────────
 declare -a TEST_CASES=(
-  "TC01|05_weather_widget_location|Location-Based Personalization|Ensures the app captures user GPS via the weather widget and displays relevant content cards based on location"
-  "TC02|06_type_question_ai_response|AI Chat Experience|Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions"
-  "TC03|08_home_feed_scroll|Home Feed Usability|Confirms that users can smoothly scroll through the home feed and access all content cards without issues"
-  "TC04|11_listen_ai_response|Audio Response Feature|Ensures users can listen to AI responses using the text-to-speech feature"
-  "TC05|25_settings_logout|User Authentication & Logout|Verifies complete user flow including sign-up, login, and logout functionality"
+  "TC01|05_weather_widget_location|Location-Based Personalization|Ensures the app captures user GPS via the weather widget and displays relevant image questions and content cards based on location|P0"
+  "TC02|06_type_question_ai_response|AI Chat Experience|Validates that users can ask farming-related questions and receive AI-generated responses along with suggested follow-up questions|P0"
+  "TC03|08_home_feed_scroll|Home Feed Usability|Confirms that users can smoothly scroll through the home feed and access all content cards without issues|P1"
+  "TC04|11_listen_ai_response|Audio Response Feature|Ensures users can listen to AI responses using the text-to-speech feature|P0"
+  "TC05|25_settings_logout|User Authentication & Logout|Verifies complete user flow including sign-up, login, and logout functionality|P0"
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -184,7 +185,7 @@ TEST_RESULTS=""
 START_TIME=$(date +%s)
 
 for test_case in "${TEST_CASES[@]}"; do
-  IFS='|' read -r TC_ID TC_FILE TC_NAME TC_DESC <<< "$test_case"
+  IFS='|' read -r TC_ID TC_FILE TC_NAME TC_DESC TC_PRIORITY <<< "$test_case"
   TOTAL=$((TOTAL + 1))
   
   printf "${YELLOW}[%d/5]${NC} %-35s " "$TOTAL" "$TC_NAME"
@@ -258,10 +259,11 @@ for test_case in "${TEST_CASES[@]}"; do
   
   TEST_RESULTS="$TEST_RESULTS
     {
-      \"id\": \"$TC_ID\",
+      \"tc\": \"$TC_ID\",
       \"name\": \"$TC_NAME\",
-      \"what_it_tests\": \"$TC_DESC\",
-      \"result\": \"$STATUS_DISPLAY\",
+      \"description\": \"$TC_DESC\",
+      \"status\": \"$STATUS\",
+      \"priority\": \"$TC_PRIORITY\",
       \"time_taken\": \"$DURATION_FRIENDLY\",
       \"issue\": \"$ERROR_MESSAGE\"
     }"
@@ -276,48 +278,32 @@ SECS=$((TOTAL_DURATION % 60))
 # GENERATE JSON REPORT (Stakeholder-friendly format)
 # ─────────────────────────────────────────────────────────────────────────────
 REPORT_FILE="$REPORTS_DIR/test_report_${TESTER_NAME// /_}_${TIMESTAMP}.json"
-RUN_DATE=$(date +%Y-%m-%d)
-RUN_TIME=$(date +%H:%M:%S)
-RUN_DATE_FRIENDLY=$(date +"%B %d, %Y")
-RUN_TIME_FRIENDLY=$(date +"%I:%M %p")
-
-# Determine overall status
-if [ $FAILED -eq 0 ]; then
-  OVERALL_STATUS="All Tests Passed ✓"
-  HEALTH_STATUS="Healthy"
-else
-  OVERALL_STATUS="$FAILED Test(s) Failed"
-  HEALTH_STATUS="Needs Attention"
-fi
+RUN_DATE_FRIENDLY=$(date +"%d %B %Y")
+RUN_TIME_FRIENDLY=$(date +"%I:%M %p IST")
+TIMESTAMP_FRIENDLY="$RUN_DATE_FRIENDLY, $RUN_TIME_FRIENDLY"
 
 cat > "$REPORT_FILE" << EOF
 {
-  "report_title": "FarmerChat App - Test Execution Report",
-  "executive_summary": {
-    "status": "$OVERALL_STATUS",
-    "health": "$HEALTH_STATUS",
-    "pass_rate": "$(echo "scale=0; $PASSED * 100 / $TOTAL" | bc)%",
-    "tests_passed": $PASSED,
-    "tests_failed": $FAILED,
-    "total_tests": $TOTAL,
-    "execution_time": "${MINS} minutes ${SECS} seconds"
+  "testSuite": "FarmerChat Core Scenarios",
+
+  "summary": {
+    "total": $TOTAL,
+    "passed": $PASSED,
+    "failed": $FAILED,
+    "pass_rate": "$(echo "scale=0; $PASSED * 100 / $TOTAL" | bc)%"
   },
-  "test_details": {
-    "date": "$RUN_DATE_FRIENDLY",
-    "time": "$RUN_TIME_FRIENDLY",
-    "tested_by": "$TESTER_NAME",
-    "device_used": "$DEVICE_BRAND $DEVICE_MODEL",
-    "android_version": "Android $ANDROID_VERSION"
-  },
-  "test_cases": [$TEST_RESULTS
-  ],
-  "device_information": {
-    "brand": "$DEVICE_BRAND",
+
+  "device": {
+    "manufacturer": "$DEVICE_BRAND",
     "model": "$DEVICE_MODEL",
-    "android_version": "$ANDROID_VERSION",
-    "device_id": "$DEVICE_ID"
+    "android_version": "$ANDROID_VERSION"
   },
-  "report_generated": "$RUN_DATE_FRIENDLY at $RUN_TIME_FRIENDLY"
+
+  "tester": "$TESTER_NAME",
+  "timestamp": "$TIMESTAMP_FRIENDLY",
+
+  "testCases": [$TEST_RESULTS
+  ]
 }
 EOF
 
