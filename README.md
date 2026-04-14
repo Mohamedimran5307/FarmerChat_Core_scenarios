@@ -1,11 +1,155 @@
-# Maestro Stable Test Suite
+# FarmerChat Maestro Test Suite
 
-A robust and stable Maestro test suite for FarmerChat app, optimized for OPPO/ColorOS devices with Android 16+.
+Automated UI test suite for the FarmerChat Android application using Maestro framework. Optimized for OPPO/ColorOS devices with Android 16+.
+
+## Quick Start for Testers
+
+### Prerequisites
+
+1. **Android Device** connected via USB with USB Debugging enabled
+2. **ADB** installed and accessible from command line
+3. **Maestro CLI** installed: 
+   ```bash
+   curl -Ls "https://get.maestro.mobile.dev" | bash
+   ```
+4. **FarmerChat APK** installed on the device
+
+### Running Tests
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Mohamedimran5307/maestro-stable.git
+   cd maestro-stable
+   ```
+
+2. **Run the test suite:**
+   ```bash
+   ./run_tests.sh
+   ```
+   
+   Or with your name:
+   ```bash
+   ./run_tests.sh "Your Name"
+   ```
+
+3. **Follow the prompts** - Enter your name when asked
+
+4. **View Results** - JSON report will be generated in `reports/` folder
+
+---
+
+## Test Cases
+
+| ID | Name | Description |
+|----|------|-------------|
+| TC05 | Weather Widget Location | Verifies weather widget functionality: tap weather button, grant location permission, verify weather forecast loads, and return to home screen |
+| TC06 | Type Question AI Response | Tests chat flow: enter farming question, send message, wait for AI response, verify related questions appear |
+| TC08 | Home Feed Scroll | Validates home feed scrolling and verifies feed cards are accessible |
+| TC11 | Listen AI Response | Tests text-to-speech: ask question, receive response, tap listen button, verify audio playback |
+| TC25 | Settings Logout | Complete auth flow: sign up, verify OTP, login, navigate to settings, logout |
+
+---
+
+## Google Drive Upload Setup
+
+### Option 1: Using rclone (Recommended)
+
+1. **Install rclone:**
+   ```bash
+   # macOS
+   brew install rclone
+   
+   # Linux
+   curl https://rclone.org/install.sh | sudo bash
+   ```
+
+2. **Configure Google Drive:**
+   ```bash
+   rclone config
+   ```
+   - Choose `n` for new remote
+   - Name it `gdrive`
+   - Choose `drive` (Google Drive)
+   - Follow OAuth prompts
+
+3. **Run tests** - Reports will auto-upload to `gdrive:FarmerChat_Test_Reports/`
+
+### Option 2: Using gdrive CLI
+
+1. **Install gdrive:**
+   ```bash
+   # macOS
+   brew install gdrive
+   
+   # Linux
+   # Download from https://github.com/glotlabs/gdrive/releases
+   ```
+
+2. **Authenticate:**
+   ```bash
+   gdrive account add
+   ```
+
+3. **Set folder ID (optional):**
+   ```bash
+   export GDRIVE_FOLDER_ID="your-folder-id-here"
+   ```
+
+### Option 3: Manual Upload
+
+If no CLI tool is installed, the script will:
+- Generate the JSON report locally in `reports/`
+- Prompt you to open Google Drive for manual upload
+
+---
+
+## JSON Report Format
+
+```json
+{
+  "report_metadata": {
+    "report_id": "Tester_Name_20260414_153000",
+    "generated_at": "2026-04-14T15:30:00"
+  },
+  "tester_info": {
+    "tester_name": "John Doe",
+    "machine_hostname": "Johns-MacBook",
+    "os_type": "Darwin"
+  },
+  "device_info": {
+    "device_id": "1a0a08f0",
+    "brand": "OPPO",
+    "model": "CPH2565",
+    "android_version": "16",
+    "sdk_version": "36"
+  },
+  "test_summary": {
+    "total_tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "pass_rate": "100%",
+    "total_duration_formatted": "8m 30s"
+  },
+  "test_results": [
+    {
+      "test_id": "TC05",
+      "test_name": "Weather Widget Location",
+      "description": "Verifies weather widget functionality...",
+      "status": "PASSED",
+      "duration_seconds": 95
+    }
+  ]
+}
+```
+
+---
 
 ## Project Structure
 
 ```
 maestro-stable/
+├── run_tests.sh              # Main test runner script
+├── setup_device.sh           # One-time device setup for Maestro APKs
 ├── config/
 │   └── env.yaml              # Environment variables
 ├── flows/
@@ -16,91 +160,46 @@ maestro-stable/
 │       ├── 11_listen_ai_response.yaml
 │       └── 25_settings_logout.yaml
 ├── helpers/
-│   ├── dismiss_oppo_popup.yaml    # OPPO popup handler
-│   ├── complete_onboarding.yaml   # App onboarding flow
-│   ├── open_drawer.yaml           # Navigation drawer
-│   └── navigate_to_settings.yaml  # Settings navigation
-├── run_tests.sh              # Test runner script
-└── README.md
+│   ├── complete_onboarding.yaml
+│   ├── dismiss_oppo_popup.yaml
+│   ├── open_drawer.yaml
+│   └── navigate_to_settings.yaml
+└── reports/                  # Generated test reports (gitignored)
 ```
 
-## Test Cases
+---
 
-| File | Description |
-|------|-------------|
-| `05_weather_widget_location.yaml` | Weather Widget, Grant Location, Verify Feed Cards |
-| `06_type_question_ai_response.yaml` | Type Question, Get AI Response, Tap Related Question |
-| `08_home_feed_scroll.yaml` | Read Full Advice and Related Questions |
-| `11_listen_ai_response.yaml` | Listen to AI Response (TTS Audio Playback) |
-| `25_settings_logout.yaml` | Settings Logout |
+## Troubleshooting
 
-## Prerequisites
+### "No Android device connected"
+- Ensure USB Debugging is enabled on device
+- Run `adb devices` to verify connection
+- Try `adb kill-server && adb start-server`
 
-1. **Maestro CLI** installed (`~/.maestro/bin/maestro`)
-2. **ADB** configured and device connected
-3. **FarmerChat app** installed (debuggable build)
+### OPPO Installation Popup
+- The script automatically handles OPPO's app verification popups
+- If stuck, manually tap "Continue installation" then "Close"
 
-## Usage
+### Maestro Connection Issues
+- Run `./setup_device.sh` to manually install Maestro APKs
+- Ensure device screen is unlocked during tests
 
-### Run All Tests
-```bash
-chmod +x run_tests.sh
-./run_tests.sh
-```
+### Tests Timing Out
+- Check device has stable internet connection
+- Ensure FarmerChat app is installed and working
 
-### Run with Specific Device
-```bash
-./run_tests.sh <device_id>
-```
-
-### Run Single Test
-```bash
-maestro test --env APP_ID=org.digitalgreen.farmer.chat \
-  --env LANGUAGE="English (Kenya)" \
-  --env LANGUAGE_CODE=en \
-  --env USER_NAME="Test Farmer" \
-  flows/home/05_weather_widget_location.yaml
-```
-
-## OPPO Device Handling
-
-This suite includes special handling for OPPO/ColorOS devices:
-
-- **OPPO App Store Popups**: Automatically dismissed via `dismiss_oppo_popup.yaml`
-- **pm clear blocked**: Uses `run-as` for app data clearing
-- **Maestro APK installation**: Auto-handled with popup dismissal
+---
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `GDRIVE_FOLDER_ID` | (none) | Google Drive folder ID for uploads |
+| `RCLONE_REMOTE` | `gdrive` | rclone remote name |
 | `APP_ID` | `org.digitalgreen.farmer.chat` | App package name |
-| `LANGUAGE` | `English (Kenya)` | Display language |
-| `LANGUAGE_CODE` | `en` | Language code |
-| `USER_NAME` | `Test Farmer` | Test user name |
-| `WAIT_TIMEOUT` | `10000` | Default wait timeout (ms) |
 
-## Troubleshooting
+---
 
-### OPPO Popup Keeps Appearing
-The popup handler runs in background during tests. If it still blocks:
-```bash
-# Manually dismiss via ADB
-adb shell input tap 360 1192  # Continue installation
-adb shell input tap 360 1312  # Close button
-```
+## Support
 
-### App Data Not Clearing
-Verify app is debuggable:
-```bash
-adb shell run-as org.digitalgreen.farmer.chat id
-```
-
-### Maestro Connection Issues
-```bash
-adb forward tcp:7001 tcp:7001
-```
-
-## License
-
-Internal use only.
+For issues or questions, contact the QA team or raise an issue in this repository.
