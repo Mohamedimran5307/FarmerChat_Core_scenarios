@@ -91,35 +91,122 @@ adb -s $DEVICE_ID shell settings put global package_verifier_enable 0 2>/dev/nul
 echo -e "  ${GREEN}✓ ADB verification disabled${NC}"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ENSURE MAESTRO APKS ARE INSTALLED
+# ENSURE MAESTRO APKS ARE INSTALLED (WITH LOGGING)
 # ─────────────────────────────────────────────────────────────────────────────
 ensure_maestro_installed() {
-  local MAESTRO_APP=$(adb -s $DEVICE_ID shell pm list packages 2>/dev/null | grep "dev.mobile.maestro$" || true)
-  local MAESTRO_TEST=$(adb -s $DEVICE_ID shell pm list packages 2>/dev/null | grep "dev.mobile.maestro.test" || true)
+  # -------------------------------
+  # Logging setup (device specific)
+  # -------------------------------
+  RUN_ID=$(date '+%Y%m%d_%H%M%S')
+  LOG_DIR="/tmp/maestro_logs_${DEVICE_ID}_$RUN_ID"
+  mkdir -p "$LOG_DIR"
 
-  if [ -z "$MAESTRO_APP" ] || [ -z "$MAESTRO_TEST" ]; then
-    echo -e "  ${YELLOW}Installing Maestro driver APKs...${NC}"
-    cd /tmp
-    unzip -o ~/.maestro/lib/maestro-client.jar maestro-app.apk maestro-server.apk 2>/dev/null || true
-    if [ -z "$MAESTRO_APP" ]; then
-      adb -s $DEVICE_ID install -r -g /tmp/maestro-app.apk &>/dev/null &
-      sleep 5
-      wait 2>/dev/null || true
-    fi
-    if [ -z "$MAESTRO_TEST" ]; then
-      adb -s $DEVICE_ID install -r -g /tmp/maestro-server.apk &>/dev/null &
-      sleep 5
-      wait 2>/dev/null || true
-    fi
-    cd - >/dev/null
-    echo -e "  ${GREEN}✓ Maestro APKs installed${NC}"
-  else
-    echo -e "  ${GREEN}✓ Maestro APKs already installed${NC}"
+  MAIN_LOG="$LOG_DIR/main.log"
+  ADB_LOG="$LOG_DIR/adb.log"
+  ERROR_LOG="$LOG_DIR/error.log"
+
+  log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$MAIN_LOG"
+  }
+
+  log_adb() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$ADB_LOG"
+  }
+
+  log_error() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR - $1" | tee -a "$ERROR_LOG"
+  }
+
+  local MAESTRO_APP_PKG="dev.mobile.maestro"
+  local MAESTRO_TEST_PKG="dev.mobile.maestro.test"
+
+  log "Checking Maestro installation..."
+
+  MAESTRO_APP=$(adb -s "$DEVICE_ID" shell pm list packages 2>/dev/null | grep "$MAESTRO_APP_PKG" || true)
+  MAESTRO_TEST=$(adb -s "$DEVICE_ID" shell pm list packages 2>/dev/null | grep "$MAESTRO_TEST_PKG" || true)
+
+  # -------------------------------
+  # Already installed
+  # -------------------------------
+  if [ -n "$MAESTRO_APP" ] && [ -n "$MAESTRO_TEST" ]; then
+    log "✓ Maestro already installed"
+    log "Logs available at: $LOG_DIR"
+    return 0
   fi
-}
 
-ensure_maestro_installed
-echo ""
+  # -------------------------------
+  # Extract APKs
+  # -------------------------------
+  if [ ! -f "/tmp/maestro-app.apk" ] || [ ! -f "/tmp/maestro-server.apk" ]; then
+    log "Extracting Maestro APKs..."
+    unzip -o ~/.maestro/lib/maestro-client.jar maestro-app.apk maestro-server.apk -d /tmp >> "$MAIN_LOG" 2>&1
+
+    if [ $? -ne 0 ]; then
+      log_error "Failed to extract Maestro APKs"
+      return 1
+    fi
+  else
+    log "APK files already exist, skipping extraction"
+  fi
+
+  # -------------------------------
+  # Install with retry
+  # -------------------------------
+  install_with_retry() {
+    local APK_PATH=$1
+    local APP_NAME=$2
+
+    for i in 1 2 3; do
+      log "Attempt $i: Installing $APP_NAME..."
+
+      INSTALL_OUTPUT=$(adb -s "$DEVICE_ID" install -r -g "$APK_PATH" 2>&1)
+      log_adb "$INSTALL_OUTPUT"
+
+      if echo "$INSTALL_OUTPUT" | grep -q "Success"; then
+        log "✓ $APP_NAME installed successfully"
+        return 0
+      fi
+
+      log "Retrying in 2 seconds..."
+      sleep 2
+    done
+
+    log_error "$APP_NAME installation failed after 3 attempts"
+    return 1
+  }
+
+  # -------------------------------
+  # Install missing APKs
+  # -------------------------------
+  if [ -z "$MAESTRO_APP" ]; then
+    install_with_retry "/tmp/maestro-app.apk" "Maestro App" || return 1
+  else
+    log "Maestro App already installed, skipping"
+  fi
+
+  if [ -z "$MAESTRO_TEST" ]; then
+    install_with_retry "/tmp/maestro-server.apk" "Maestro Server" || return 1
+  else
+    log "Maestro Server already installed, skipping"
+  fi
+
+  # -------------------------------
+  # Final verification
+  # -------------------------------
+  log "Verifying installation..."
+
+  FINAL_APP=$(adb -s "$DEVICE_ID" shell pm list packages 2>/dev/null | grep "$MAESTRO_APP_PKG" || true)
+  FINAL_TEST=$(adb -s "$DEVICE_ID" shell pm list packages 2>/dev/null | grep "$MAESTRO_TEST_PKG" || true)
+
+  if [ -n "$FINAL_APP" ] && [ -n "$FINAL_TEST" ]; then
+    log "🎉 SUCCESS: Maestro installed and verified"
+    log "Logs available at: $LOG_DIR"
+    return 0
+  fi
+
+  log_error "Installation verification failed"
+  return 1
+}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DISMISS SYSTEM POPUP FUNCTION
@@ -533,7 +620,7 @@ echo -e "${BLUE}═════════════════════�
 echo ""
 
 # Google Drive folder ID for FarmerChat test reports
-GDRIVE_FOLDER_ID="1Bs15iX32PLRe_fX7-OfXofnQwL5wiwkb"
+GDRIVE_FOLDER_ID="1CsIXNd7CFD-NWFzpPU4guoCbjVj-1s9Y"
 GDRIVE_FOLDER_URL="https://drive.google.com/drive/folders/$GDRIVE_FOLDER_ID"
 
 # Check if rclone is configured
