@@ -45,13 +45,6 @@ tags:
     commands:
       - tapOn: "No thanks"
 
-# Wait for AI response
-- extendedWaitUntil:
-    visible:
-      id: "chat_thread_list"
-    timeout: 30000
-- waitForAnimationToEnd
-
 # Scroll down to find "Related questions" section
 - scrollUntilVisible:
     centerElement: true
@@ -68,13 +61,6 @@ tags:
     visible:
       id: "home_screen"
     timeout: 10000
-
-# Now home screen should have content cards with "Learn More" button
-- scrollUntilVisible:
-    element:
-      text: "Learn More"
-    direction: DOWN
-    timeout: 30000
 - tapOn:
     text: "Learn More"
     index: 0

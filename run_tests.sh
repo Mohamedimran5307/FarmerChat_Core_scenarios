@@ -133,13 +133,47 @@ dismiss_system_popup() {
     
     if echo "$ui_dump" | grep -q "com.oplus.stdsp"; then
       if echo "$ui_dump" | grep -q "Continue installation"; then
-        adb -s $DEVICE_ID shell input tap 360 1192 2>/dev/null
+        # Try clicking by text, fall back to coordinate
+        local bounds=$(echo "$ui_dump" | grep -o 'text="Continue installation"[^>]*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+        if [ -n "$bounds" ]; then
+          local x1=$(echo "$bounds" | grep -o '\[[0-9]*,' | head -1 | tr -d '[,')
+          local y1=$(echo "$bounds" | grep -o ',[0-9]*\]' | head -1 | tr -d ',]')
+          local x2=$(echo "$bounds" | grep -o '\[[0-9]*,' | tail -1 | tr -d '[,')
+          local y2=$(echo "$bounds" | grep -o ',[0-9]*\]' | tail -1 | tr -d ',]')
+          local cx=$(( (x1 + x2) / 2 ))
+          local cy=$(( (y1 + y2) / 2 ))
+          adb -s $DEVICE_ID shell input tap $cx $cy 2>/dev/null
+        else
+          adb -s $DEVICE_ID shell input tap 360 1192 2>/dev/null
+        fi
         sleep 3
       elif echo "$ui_dump" | grep -q "btn_finish"; then
-        adb -s $DEVICE_ID shell input tap 360 1312 2>/dev/null
+        local bounds=$(echo "$ui_dump" | grep -o 'resource-id="[^"]*btn_finish"[^>]*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+        if [ -n "$bounds" ]; then
+          local x1=$(echo "$bounds" | grep -o '\[[0-9]*,' | head -1 | tr -d '[,')
+          local y1=$(echo "$bounds" | grep -o ',[0-9]*\]' | head -1 | tr -d ',]')
+          local x2=$(echo "$bounds" | grep -o '\[[0-9]*,' | tail -1 | tr -d '[,')
+          local y2=$(echo "$bounds" | grep -o ',[0-9]*\]' | tail -1 | tr -d ',]')
+          local cx=$(( (x1 + x2) / 2 ))
+          local cy=$(( (y1 + y2) / 2 ))
+          adb -s $DEVICE_ID shell input tap $cx $cy 2>/dev/null
+        else
+          adb -s $DEVICE_ID shell input tap 360 1312 2>/dev/null
+        fi
         sleep 1
       elif echo "$ui_dump" | grep -q "btn_navigation_close"; then
-        adb -s $DEVICE_ID shell input tap 73 130 2>/dev/null
+        local bounds=$(echo "$ui_dump" | grep -o 'resource-id="[^"]*btn_navigation_close"[^>]*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+        if [ -n "$bounds" ]; then
+          local x1=$(echo "$bounds" | grep -o '\[[0-9]*,' | head -1 | tr -d '[,')
+          local y1=$(echo "$bounds" | grep -o ',[0-9]*\]' | head -1 | tr -d ',]')
+          local x2=$(echo "$bounds" | grep -o '\[[0-9]*,' | tail -1 | tr -d '[,')
+          local y2=$(echo "$bounds" | grep -o ',[0-9]*\]' | tail -1 | tr -d ',]')
+          local cx=$(( (x1 + x2) / 2 ))
+          local cy=$(( (y1 + y2) / 2 ))
+          adb -s $DEVICE_ID shell input tap $cx $cy 2>/dev/null
+        else
+          adb -s $DEVICE_ID shell input tap 73 130 2>/dev/null
+        fi
         sleep 1
       fi
     else
@@ -155,6 +189,16 @@ setup_test() {
   adb -s $DEVICE_ID shell am force-stop $APP_ID 2>/dev/null
   adb -s $DEVICE_ID shell "run-as $APP_ID sh -c 'rm -rf shared_prefs/* files/* cache/* databases/*'" 2>/dev/null || true
   adb -s $DEVICE_ID forward tcp:7001 tcp:7001 2>/dev/null
+  sleep 2
+  # Verify port 7001 is listening (1B59 = 7001 in hex)
+  local PORT_RETRIES=0
+  while [ $PORT_RETRIES -lt 5 ]; do
+    if adb -s $DEVICE_ID shell "cat /proc/net/tcp" 2>/dev/null | grep -qi "1B59"; then
+      break
+    fi
+    PORT_RETRIES=$((PORT_RETRIES + 1))
+    sleep 2
+  done
   adb -s $DEVICE_ID shell am start --activity-clear-task -n $APP_ID/org.digitalgreen.farmer.chatbot.MainActivity 2>/dev/null
   sleep 3
   dismiss_system_popup
@@ -203,6 +247,7 @@ TOTAL=0
 PASSED=0
 FAILED=0
 TEST_RESULTS=""
+declare -a TEST_STATUS_ARRAY=()
 START_TIME=$(date +%s)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -307,9 +352,13 @@ reset_maestro_for_retry() {
   adb -s $DEVICE_ID shell am force-stop dev.mobile.maestro 2>/dev/null || true
   adb -s $DEVICE_ID shell am force-stop dev.mobile.maestro.test 2>/dev/null || true
   adb -s $DEVICE_ID forward --remove tcp:7001 2>/dev/null || true
-  sleep 1
-  adb -s $DEVICE_ID forward tcp:7001 tcp:7001 >/dev/null 2>&1
+  # Full ADB reset to recover from driver timeouts and connection refused errors
+  adb kill-server 2>/dev/null || true
   sleep 2
+  adb start-server 2>/dev/null || true
+  sleep 3
+  adb -s $DEVICE_ID forward tcp:7001 tcp:7001 >/dev/null 2>&1
+  sleep 5
 }
 
 for test_case in "${TEST_CASES[@]}"; do
@@ -363,11 +412,13 @@ for test_case in "${TEST_CASES[@]}"; do
   if [ "$TEST_PASSED" = "true" ]; then
     STATUS="PASSED"
     PASSED=$((PASSED + 1))
+    TEST_STATUS_ARRAY+=("PASSED")
     echo -e "${GREEN}✓ PASSED${NC} (${FINAL_DURATION}s)${RETRY_INFO}"
     ERROR_MESSAGE=""
   else
     STATUS="FAILED"
     FAILED=$((FAILED + 1))
+    TEST_STATUS_ARRAY+=("FAILED")
     echo -e "${RED}✗ FAILED${NC} (${FINAL_DURATION}s) ${YELLOW}(after $MAX_RETRIES retries)${NC}"
     ERROR_MESSAGE=$(echo "$FINAL_OUTPUT" | grep -A 2 "FAILED" | head -3 | tr '\n' ' ' | tr '"' "'" | sed 's/[[:cntrl:]]//g')
     show_failure_details "$FINAL_OUTPUT" "$FINAL_LOG_FILE"
@@ -463,10 +514,9 @@ TEST_CASES_HTML=""
 TC_INDEX=0
 for test_case in "${TEST_CASES[@]}"; do
   IFS='|' read -r TC_ID TC_FILE TC_NAME TC_DESC TC_PRIORITY <<< "$test_case"
-  TC_INDEX=$((TC_INDEX + 1))
   
-  # Get status from results (simplified - based on order)
-  if [ $TC_INDEX -le $PASSED ]; then
+  # Use actual recorded status for each test case
+  if [ "${TEST_STATUS_ARRAY[$TC_INDEX]}" = "PASSED" ]; then
     TC_STATUS="PASSED"
     TC_STATUS_COLOR="#4caf50"
     TC_STATUS_BG="#e8f5e9"
@@ -477,6 +527,7 @@ for test_case in "${TEST_CASES[@]}"; do
     TC_STATUS_BG="#ffebee"
     TC_ICON="✗"
   fi
+  TC_INDEX=$((TC_INDEX + 1))
   
   TEST_CASES_HTML="$TEST_CASES_HTML
     <tr>

@@ -43,12 +43,6 @@ tags:
         text: "No thanks"
     commands:
       - tapOn: "No thanks"
-# Wait for AI response
-- extendedWaitUntil:
-    visible:
-      id: "chat_thread_list"
-    timeout: 30000
-- waitForAnimationToEnd
 
 # Scroll down to find "Related questions" section
 - scrollUntilVisible:

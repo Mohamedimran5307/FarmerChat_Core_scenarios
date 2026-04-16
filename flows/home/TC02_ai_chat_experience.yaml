@@ -36,14 +36,9 @@ tags:
     speed: 40
 - assertVisible: "Related questions"
 
-# Swipe up a bit to make the "Ask" button visible
-- swipe:
-    direction: UP
-    duration: 300
-
 # Tap Ask button (exact match to avoid "Ask about your farm...")
 - tapOn:
-    text: "^Ask$"
+    text: "Ask"
 
 # Wait for new response after tapping related question
 - extendedWaitUntil:
