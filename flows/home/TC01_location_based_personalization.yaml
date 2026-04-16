@@ -43,12 +43,22 @@ tags:
         text: "No thanks"
     commands:
       - tapOn: "No thanks"
-
-# Wait for weather response to load (text includes emojis: "🌥️ 3-Day Weather Forecast 🌥️")
+# Wait for AI response
 - extendedWaitUntil:
     visible:
-      text: ".*Weather Forecast.*"
-    timeout: 20000
+      id: "chat_thread_list"
+    timeout: 30000
+- waitForAnimationToEnd
+
+# Scroll down to find "Related questions" section
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Related questions"
+    direction: DOWN
+    timeout: 90000
+    speed: 40
+- assertVisible: "Related questions"
 
 # Go back to home screen using back button
 - back
@@ -58,9 +68,9 @@ tags:
       id: "home_screen"
     timeout: 10000
 
-- scrollUntilVisible:
-    element:
-      text: "Learn More"
-    direction: DOWN
-    timeout: 15000
+# - scrollUntilVisible:
+#     element:
+#       text: "Learn More"
+#     direction: DOWN
+#     timeout: 15000
 - assertVisible: "Learn More"

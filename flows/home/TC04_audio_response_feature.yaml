@@ -23,6 +23,7 @@ tags:
       id: "chat_thread_list"
     timeout: 60000
 - scrollUntilVisible:
+    centerElement: true
     element:
       id: "chat_listen_button"
     direction: DOWN

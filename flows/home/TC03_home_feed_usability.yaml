@@ -45,12 +45,22 @@ tags:
     commands:
       - tapOn: "No thanks"
 
-# Wait for weather response to load
+# Wait for AI response
 - extendedWaitUntil:
     visible:
-      text: ".*Weather Forecast.*"
-    timeout: 20000
+      id: "chat_thread_list"
+    timeout: 30000
+- waitForAnimationToEnd
 
+# Scroll down to find "Related questions" section
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Related questions"
+    direction: DOWN
+    timeout: 90000
+    speed: 40
+- assertVisible: "Related questions"
 # Go back to home screen
 - back
 

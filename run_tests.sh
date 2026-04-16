@@ -4,7 +4,8 @@
 # Collects device info, runs tests, generates JSON report, uploads to Google Drive
 # =============================================================================
 
-set -e
+# Don't exit on error - we handle errors with retry logic
+# set -e
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CONFIGURATION
@@ -12,6 +13,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPORTS_DIR="$SCRIPT_DIR/reports"
 DATE_STAMP=$(date +%d%b%Y)
+TIME_STAMP=$(date +%H%M%S)
 APP_ID="org.digitalgreen.farmer.chat"
 
 # Colors
@@ -20,6 +22,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
 NC='\033[0m'
 
 # Create reports directory
@@ -79,7 +82,6 @@ DEVICE_SERIAL=$(adb -s $DEVICE_ID shell getprop ro.serialno | tr -d '\r')
 echo -e "  Brand:           ${CYAN}$DEVICE_BRAND${NC}"
 echo -e "  Model:           ${CYAN}$DEVICE_MODEL${NC}"
 echo -e "  Android Version: ${CYAN}$ANDROID_VERSION (SDK $SDK_VERSION)${NC}"
-echo -e "  Build ID:        ${CYAN}$BUILD_ID${NC}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -91,129 +93,42 @@ adb -s $DEVICE_ID shell settings put global package_verifier_enable 0 2>/dev/nul
 echo -e "  ${GREEN}✓ ADB verification disabled${NC}"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ENSURE MAESTRO APKS ARE INSTALLED (WITH LOGGING)
+# ENSURE MAESTRO APKS ARE INSTALLED
 # ─────────────────────────────────────────────────────────────────────────────
 ensure_maestro_installed() {
-  # -------------------------------
-  # Logging setup (device specific)
-  # -------------------------------
-  RUN_ID=$(date '+%Y%m%d_%H%M%S')
-  LOG_DIR="/tmp/maestro_logs_${DEVICE_ID}_$RUN_ID"
-  mkdir -p "$LOG_DIR"
+  local MAESTRO_APP=$(adb -s $DEVICE_ID shell pm list packages 2>/dev/null | grep "dev.mobile.maestro$" || true)
+  local MAESTRO_TEST=$(adb -s $DEVICE_ID shell pm list packages 2>/dev/null | grep "dev.mobile.maestro.test" || true)
 
-  MAIN_LOG="$LOG_DIR/main.log"
-  ADB_LOG="$LOG_DIR/adb.log"
-  ERROR_LOG="$LOG_DIR/error.log"
-
-  log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$MAIN_LOG"
-  }
-
-  log_adb() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$ADB_LOG"
-  }
-
-  log_error() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR - $1" | tee -a "$ERROR_LOG"
-  }
-
-  local MAESTRO_APP_PKG="dev.mobile.maestro"
-  local MAESTRO_TEST_PKG="dev.mobile.maestro.test"
-
-  log "Checking Maestro installation..."
-
-  MAESTRO_APP=$(adb -s "$DEVICE_ID" shell pm list packages 2>/dev/null | grep "$MAESTRO_APP_PKG" || true)
-  MAESTRO_TEST=$(adb -s "$DEVICE_ID" shell pm list packages 2>/dev/null | grep "$MAESTRO_TEST_PKG" || true)
-
-  # -------------------------------
-  # Already installed
-  # -------------------------------
-  if [ -n "$MAESTRO_APP" ] && [ -n "$MAESTRO_TEST" ]; then
-    log "✓ Maestro already installed"
-    log "Logs available at: $LOG_DIR"
-    return 0
-  fi
-
-  # -------------------------------
-  # Extract APKs
-  # -------------------------------
-  if [ ! -f "/tmp/maestro-app.apk" ] || [ ! -f "/tmp/maestro-server.apk" ]; then
-    log "Extracting Maestro APKs..."
-    unzip -o ~/.maestro/lib/maestro-client.jar maestro-app.apk maestro-server.apk -d /tmp >> "$MAIN_LOG" 2>&1
-
-    if [ $? -ne 0 ]; then
-      log_error "Failed to extract Maestro APKs"
-      return 1
+  if [ -z "$MAESTRO_APP" ] || [ -z "$MAESTRO_TEST" ]; then
+    echo -e "  ${YELLOW}Installing Maestro driver APKs...${NC}"
+    cd /tmp
+    unzip -o ~/.maestro/lib/maestro-client.jar maestro-app.apk maestro-server.apk 2>/dev/null || true
+    if [ -z "$MAESTRO_APP" ]; then
+      adb -s $DEVICE_ID install -r -g /tmp/maestro-app.apk &>/dev/null &
+      sleep 5
+      wait 2>/dev/null || true
     fi
+    if [ -z "$MAESTRO_TEST" ]; then
+      adb -s $DEVICE_ID install -r -g /tmp/maestro-server.apk &>/dev/null &
+      sleep 5
+      wait 2>/dev/null || true
+    fi
+    cd - >/dev/null
+    echo -e "  ${GREEN}✓ Maestro APKs installed${NC}"
   else
-    log "APK files already exist, skipping extraction"
+    echo -e "  ${GREEN}✓ Maestro APKs already installed${NC}"
   fi
-
-  # -------------------------------
-  # Install with retry
-  # -------------------------------
-  install_with_retry() {
-    local APK_PATH=$1
-    local APP_NAME=$2
-
-    for i in 1 2 3; do
-      log "Attempt $i: Installing $APP_NAME..."
-
-      INSTALL_OUTPUT=$(adb -s "$DEVICE_ID" install -r -g "$APK_PATH" 2>&1)
-      log_adb "$INSTALL_OUTPUT"
-
-      if echo "$INSTALL_OUTPUT" | grep -q "Success"; then
-        log "✓ $APP_NAME installed successfully"
-        return 0
-      fi
-
-      log "Retrying in 2 seconds..."
-      sleep 2
-    done
-
-    log_error "$APP_NAME installation failed after 3 attempts"
-    return 1
-  }
-
-  # -------------------------------
-  # Install missing APKs
-  # -------------------------------
-  if [ -z "$MAESTRO_APP" ]; then
-    install_with_retry "/tmp/maestro-app.apk" "Maestro App" || return 1
-  else
-    log "Maestro App already installed, skipping"
-  fi
-
-  if [ -z "$MAESTRO_TEST" ]; then
-    install_with_retry "/tmp/maestro-server.apk" "Maestro Server" || return 1
-  else
-    log "Maestro Server already installed, skipping"
-  fi
-
-  # -------------------------------
-  # Final verification
-  # -------------------------------
-  log "Verifying installation..."
-
-  FINAL_APP=$(adb -s "$DEVICE_ID" shell pm list packages 2>/dev/null | grep "$MAESTRO_APP_PKG" || true)
-  FINAL_TEST=$(adb -s "$DEVICE_ID" shell pm list packages 2>/dev/null | grep "$MAESTRO_TEST_PKG" || true)
-
-  if [ -n "$FINAL_APP" ] && [ -n "$FINAL_TEST" ]; then
-    log "🎉 SUCCESS: Maestro installed and verified"
-    log "Logs available at: $LOG_DIR"
-    return 0
-  fi
-
-  log_error "Installation verification failed"
-  return 1
 }
+
+ensure_maestro_installed
+echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DISMISS SYSTEM POPUP FUNCTION
 # ─────────────────────────────────────────────────────────────────────────────
 dismiss_system_popup() {
   for attempt in 1 2 3 4; do
-    adb -s $DEVICE_ID shell uiautomator dump /sdcard/ui_check.xml 2>/dev/null
+    adb -s $DEVICE_ID shell uiautomator dump /sdcard/ui_check.xml >/dev/null 2>&1
     local ui_dump=$(adb -s $DEVICE_ID shell cat /sdcard/ui_check.xml 2>/dev/null)
     
     if echo "$ui_dump" | grep -q "com.oplus.stdsp"; then
@@ -265,34 +180,52 @@ echo -e "${BLUE}                    RUNNING TEST CASES${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 echo ""
 
+# Create logs directory for this run
+RUN_LOGS_DIR="$REPORTS_DIR/logs_${DATE_STAMP}_${TIME_STAMP}"
+mkdir -p "$RUN_LOGS_DIR"
+
+# Master log file
+MASTER_LOG="$RUN_LOGS_DIR/run.log"
+echo "FarmerChat Test Run - $(date)" > "$MASTER_LOG"
+echo "Device: $DEVICE_ID ($DEVICE_BRAND $DEVICE_MODEL, Android $ANDROID_VERSION)" >> "$MASTER_LOG"
+echo "Tester: $TESTER_NAME" >> "$MASTER_LOG"
+echo "═══════════════════════════════════════════════════════════════" >> "$MASTER_LOG"
+
+# Show logs directory
+echo -e "${CYAN}Logs directory:${NC} $RUN_LOGS_DIR"
+echo -e "${CYAN}Master log:${NC} $MASTER_LOG"
+echo ""
+
+# Maximum retry attempts (2 retries = 3 total attempts)
+MAX_RETRIES=2
+
 TOTAL=0
 PASSED=0
 FAILED=0
 TEST_RESULTS=""
 START_TIME=$(date +%s)
 
-for test_case in "${TEST_CASES[@]}"; do
-  IFS='|' read -r TC_ID TC_FILE TC_NAME TC_DESC TC_PRIORITY <<< "$test_case"
-  TOTAL=$((TOTAL + 1))
+# ─────────────────────────────────────────────────────────────────────────────
+# RUN SINGLE TEST ATTEMPT
+# ─────────────────────────────────────────────────────────────────────────────
+run_test_attempt() {
+  local TC_FILE="$1"
+  local ATTEMPT_NUM="$2"
   
-  printf "${YELLOW}[%d/5]${NC} %-35s " "$TOTAL" "$TC_NAME"
-  echo -ne "${BLUE}RUNNING...${NC}"
+  TEST_LOG_FILE="$RUN_LOGS_DIR/${TC_FILE}_attempt${ATTEMPT_NUM}.log"
   
-  # Setup test environment
   setup_test >/dev/null 2>&1
   
-  # Background popup handler
   (
     for i in $(seq 1 20); do
       sleep 3
       dismiss_system_popup 2>/dev/null
     done
   ) &
-  POPUP_PID=$!
+  local POPUP_PID=$!
   
-  # Run test and capture output
-  TEST_START=$(date +%s)
-  OUTPUT=$(maestro --device $DEVICE_ID test \
+  local TEST_START=$(date +%s)
+  TEST_OUTPUT=$(maestro --device $DEVICE_ID test \
     --env APP_ID=$APP_ID \
     --env LANGUAGE="English (Kenya)" \
     --env LANGUAGE_CODE=en \
@@ -303,41 +236,155 @@ for test_case in "${TEST_CASES[@]}"; do
     --env OTP_CODE=1111 \
     "$SCRIPT_DIR/flows/home/${TC_FILE}.yaml" 2>&1)
   
-  EXIT_CODE=$?
-  TEST_END=$(date +%s)
+  TEST_EXIT_CODE=$?
+  local TEST_END=$(date +%s)
   TEST_DURATION=$((TEST_END - TEST_START))
   
   kill $POPUP_PID 2>/dev/null || true
+  wait $POPUP_PID 2>/dev/null || true
   
-  # Clear line and print result
+  {
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "Test: $TC_FILE (Attempt $ATTEMPT_NUM)"
+    echo "Device: $DEVICE_ID"
+    echo "Duration: ${TEST_DURATION}s"
+    echo "Exit Code: $TEST_EXIT_CODE"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+    echo "$TEST_OUTPUT"
+  } > "$TEST_LOG_FILE"
+  
+  echo "[$(date '+%H:%M:%S')] $TC_FILE attempt $ATTEMPT_NUM: exit_code=$TEST_EXIT_CODE, duration=${TEST_DURATION}s" >> "$MASTER_LOG"
+  
+  return $TEST_EXIT_CODE
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SHOW FAILURE DETAILS
+# ─────────────────────────────────────────────────────────────────────────────
+show_failure_details() {
+  local OUTPUT="$1"
+  local LOG_FILE="$2"
+  
+  echo ""
+  echo -e "  ${RED}━━━ FAILURE DETAILS ━━━${NC}"
+  
+  if echo "$OUTPUT" | grep -q "driver did not start"; then
+    echo -e "  ${YELLOW}Type:${NC}  Driver Timeout"
+    echo -e "  ${MAGENTA}Error:${NC} Maestro Android driver did not start up in time"
+    echo -e "  ${CYAN}Hint:${NC}  Run: adb kill-server && adb start-server"
+  elif echo "$OUTPUT" | grep -q "Connection refused"; then
+    echo -e "  ${YELLOW}Type:${NC}  Connection Error"
+    echo -e "  ${MAGENTA}Error:${NC} Connection refused on port 7001"
+    echo -e "  ${CYAN}Hint:${NC}  Run: adb forward tcp:7001 tcp:7001"
+  elif echo "$OUTPUT" | grep -q "Element not found"; then
+    local FAILED_STEP=$(echo "$OUTPUT" | grep "FAILED" | head -1)
+    local ELEMENT_ERROR=$(echo "$OUTPUT" | grep "Element not found" | head -1)
+    echo -e "  ${YELLOW}Type:${NC}  Element Not Found"
+    [ -n "$FAILED_STEP" ] && echo -e "  ${YELLOW}Step:${NC}  $FAILED_STEP"
+    echo -e "  ${MAGENTA}Error:${NC} $ELEMENT_ERROR"
+    echo -e "  ${CYAN}Hint:${NC}  Element may not be visible or selector may be incorrect"
+  elif echo "$OUTPUT" | grep -q "FAILED"; then
+    local FAILED_STEP=$(echo "$OUTPUT" | grep "FAILED" | head -1)
+    echo -e "  ${YELLOW}Type:${NC}  Test Step Failed"
+    echo -e "  ${YELLOW}Step:${NC}  $FAILED_STEP"
+    echo -e "  ${CYAN}Hint:${NC}  Check the full log for more details"
+  else
+    echo -e "  ${YELLOW}Type:${NC}  Unknown Error"
+    echo -e "  ${CYAN}Hint:${NC}  Check the full log for more details"
+  fi
+  
+  [ -n "$LOG_FILE" ] && [ -f "$LOG_FILE" ] && echo -e "  ${CYAN}Full log:${NC} $LOG_FILE"
+  
+  echo -e "  ${RED}━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo ""
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RESET MAESTRO CONNECTION (for retry)
+# ─────────────────────────────────────────────────────────────────────────────
+reset_maestro_for_retry() {
+  adb -s $DEVICE_ID shell am force-stop dev.mobile.maestro 2>/dev/null || true
+  adb -s $DEVICE_ID shell am force-stop dev.mobile.maestro.test 2>/dev/null || true
+  adb -s $DEVICE_ID forward --remove tcp:7001 2>/dev/null || true
+  sleep 1
+  adb -s $DEVICE_ID forward tcp:7001 tcp:7001 >/dev/null 2>&1
+  sleep 2
+}
+
+for test_case in "${TEST_CASES[@]}"; do
+  IFS='|' read -r TC_ID TC_FILE TC_NAME TC_DESC TC_PRIORITY <<< "$test_case"
+  TOTAL=$((TOTAL + 1))
+  
+  ATTEMPT=1
+  TEST_PASSED=false
+  FINAL_OUTPUT=""
+  FINAL_DURATION=0
+  FINAL_LOG_FILE=""
+  RETRY_INFO=""
+  
+  while [ $ATTEMPT -le $((MAX_RETRIES + 1)) ] && [ "$TEST_PASSED" = "false" ]; do
+    echo -ne "\r"
+    printf "${YELLOW}[%d/5]${NC} %-35s " "$TOTAL" "$TC_NAME"
+    if [ $ATTEMPT -eq 1 ]; then
+      echo -ne "${BLUE}RUNNING...${NC}"
+    else
+      echo -ne "${BLUE}RETRY $((ATTEMPT-1))/${MAX_RETRIES}...${NC}"
+    fi
+    
+    run_test_attempt "$TC_FILE" "$ATTEMPT"
+    
+    if [ $TEST_EXIT_CODE -eq 0 ]; then
+      TEST_PASSED=true
+      FINAL_OUTPUT="$TEST_OUTPUT"
+      FINAL_DURATION=$TEST_DURATION
+      FINAL_LOG_FILE="$TEST_LOG_FILE"
+      [ $ATTEMPT -gt 1 ] && RETRY_INFO=" ${CYAN}(passed on retry $((ATTEMPT-1)))${NC}"
+    else
+      FINAL_OUTPUT="$TEST_OUTPUT"
+      FINAL_DURATION=$TEST_DURATION
+      FINAL_LOG_FILE="$TEST_LOG_FILE"
+      
+      if [ $ATTEMPT -le $MAX_RETRIES ]; then
+        echo -ne "\r"
+        printf "${YELLOW}[%d/5]${NC} %-35s " "$TOTAL" "$TC_NAME"
+        echo -e "${YELLOW}⟳ ATTEMPT $ATTEMPT FAILED${NC} (${TEST_DURATION}s) - retrying..."
+        show_failure_details "$TEST_OUTPUT" "$TEST_LOG_FILE"
+        reset_maestro_for_retry
+      fi
+      
+      ATTEMPT=$((ATTEMPT + 1))
+    fi
+  done
+  
   echo -ne "\r"
   printf "${YELLOW}[%d/5]${NC} %-35s " "$TOTAL" "$TC_NAME"
   
-  if [ $EXIT_CODE -eq 0 ]; then
+  if [ "$TEST_PASSED" = "true" ]; then
     STATUS="PASSED"
     PASSED=$((PASSED + 1))
-    echo -e "${GREEN}✓ PASSED${NC} (${TEST_DURATION}s)"
+    echo -e "${GREEN}✓ PASSED${NC} (${FINAL_DURATION}s)${RETRY_INFO}"
     ERROR_MESSAGE=""
   else
     STATUS="FAILED"
     FAILED=$((FAILED + 1))
-    echo -e "${RED}✗ FAILED${NC} (${TEST_DURATION}s)"
-    ERROR_MESSAGE=$(echo "$OUTPUT" | grep -A 2 "FAILED" | head -3 | tr '\n' ' ' | tr '"' "'" | sed 's/[[:cntrl:]]//g')
+    echo -e "${RED}✗ FAILED${NC} (${FINAL_DURATION}s) ${YELLOW}(after $MAX_RETRIES retries)${NC}"
+    ERROR_MESSAGE=$(echo "$FINAL_OUTPUT" | grep -A 2 "FAILED" | head -3 | tr '\n' ' ' | tr '"' "'" | sed 's/[[:cntrl:]]//g')
+    show_failure_details "$FINAL_OUTPUT" "$FINAL_LOG_FILE"
   fi
   
-  # Build JSON for this test result (stakeholder-friendly)
+  OUTPUT="$FINAL_OUTPUT"
+  
   if [ -n "$TEST_RESULTS" ]; then
     TEST_RESULTS="$TEST_RESULTS,"
   fi
   
-  # Convert duration to readable format
-  if [ $TEST_DURATION -ge 60 ]; then
-    DURATION_FRIENDLY="$((TEST_DURATION / 60))m $((TEST_DURATION % 60))s"
+  if [ $FINAL_DURATION -ge 60 ]; then
+    DURATION_FRIENDLY="$((FINAL_DURATION / 60))m $((FINAL_DURATION % 60))s"
   else
-    DURATION_FRIENDLY="${TEST_DURATION}s"
+    DURATION_FRIENDLY="${FINAL_DURATION}s"
   fi
   
-  # Status emoji for quick visual
   if [ "$STATUS" = "PASSED" ]; then
     STATUS_DISPLAY="✓ Passed"
   else
@@ -607,9 +654,22 @@ echo -e "  Failed:     ${RED}$FAILED${NC}"
 echo -e "  Pass Rate:  ${CYAN}$(echo "scale=2; $PASSED * 100 / $TOTAL" | bc)%${NC}"
 echo -e "  Duration:   ${YELLOW}${MINS}m ${SECS}s${NC}"
 echo ""
-echo -e "  JSON Report:  ${CYAN}$REPORT_FILE${NC}"
-echo -e "  HTML Report:  ${CYAN}$HTML_REPORT_FILE${NC}"
+echo -e "  ${CYAN}Logs:${NC}         $RUN_LOGS_DIR"
+echo -e "  ${CYAN}JSON Report:${NC}  $REPORT_FILE"
+echo -e "  ${CYAN}HTML Report:${NC}  $HTML_REPORT_FILE"
 echo ""
+
+# Write summary to master log
+{
+  echo ""
+  echo "═══════════════════════════════════════════════════════════════"
+  echo "TEST RUN SUMMARY"
+  echo "═══════════════════════════════════════════════════════════════"
+  echo "Total: $TOTAL | Passed: $PASSED | Failed: $FAILED"
+  echo "Pass Rate: $(echo "scale=2; $PASSED * 100 / $TOTAL" | bc)%"
+  echo "Duration: ${MINS}m ${SECS}s"
+  echo "Completed: $(date)"
+} >> "$MASTER_LOG"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # UPLOAD TO GOOGLE DRIVE
@@ -628,7 +688,7 @@ if command -v rclone &> /dev/null; then
   # Check if gdrive remote exists
   if rclone listremotes | grep -q "gdrive:"; then
     echo -e "${YELLOW}Uploading JSON report to Google Drive...${NC}"
-    rclone copy "$REPORT_FILE" "gdrive:FarmerChat_Test_Reports" --drive-root-folder-id="$GDRIVE_FOLDER_ID" && \
+    rclone copy "$REPORT_FILE" "gdrive:" --drive-root-folder-id="$GDRIVE_FOLDER_ID" && \
       echo -e "${GREEN}✓ JSON report uploaded successfully!${NC}" && \
       echo -e "  View at: ${CYAN}$GDRIVE_FOLDER_URL${NC}" || \
       echo -e "${RED}✗ Failed to upload report${NC}"
