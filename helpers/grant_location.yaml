@@ -1,0 +1,53 @@
+appId: any
+---
+# ============================================================
+# GRANT LOCATION
+# Taps the home weather widget and walks through every dialog
+# that can appear before the location permission is actually
+# granted. Each step is wrapped in `runFlow when: visible:`,
+# so any dialog already past (e.g. permission previously
+# granted at the OS level) is silently skipped — re-running on
+# a device with the permission still set is a no-op past the
+# initial tap.
+#
+# Usage from a flow under flows/home/:
+#   - runFlow: ../../helpers/grant_location.yaml
+# ============================================================
+
+# Tap on weather widget button
+- tapOn:
+    id: "home_weather_button"
+
+# Handle "Share Location" interstitial screen (button at bottom)
+- runFlow:
+    when:
+      visible:
+        text: "Get local farm advice"
+    commands:
+      - tapOn:
+          text: "Share Location"
+          index: 1
+
+# Handle location permission popup - "While using the app"
+- runFlow:
+    when:
+      visible:
+        text: "While using the app"
+    commands:
+      - tapOn: "While using the app"
+
+# Alternative: Handle by permission button ID
+- runFlow:
+    when:
+      visible:
+        id: "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+    commands:
+      - tapOn:
+          id: "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+
+- runFlow:
+    when:
+      visible:
+        text: "No thanks"
+    commands:
+      - tapOn: "No thanks"
