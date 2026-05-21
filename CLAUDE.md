@@ -29,7 +29,7 @@ The second positional arg to `run_tests.sh` is a TC filter (parsed at `run_tests
 
 **Test execution model.** Flows declare `appId: any` rather than the FarmerChat package. They never auto-launch the app — `run_tests.sh:setup_test()` does that explicitly via `am start --activity-clear-task`. This is deliberate: the runner first wipes app state (`run-as $APP_ID rm -rf shared_prefs/* files/* cache/* databases/*`) so each test starts from a clean install, then forwards `tcp:7001` (Maestro driver port) and waits for it to listen before launching the app and invoking `maestro test`.
 
-**Helper composition.** Every flow in `flows/home/` begins with `runFlow: ../../helpers/complete_onboarding.yaml`, which is the canonical entry sequence: dismiss system popups → handle notification permission → skip privacy policy → run language picker (uses `language_item_${LANGUAGE_CODE}`) → enter `${USER_NAME}` if prompted → wait for `home_screen`. It is idempotent — if `home_screen` is already visible it short-circuits, so re-running flows on a logged-in device works. When adding a new flow, start with this same `runFlow` line; do not duplicate onboarding steps inline.
+**Helper composition.** Every flow in `flows/home/` begins with `runFlow: ../../helpers/complete_onboarding.yaml`. The current canonical entry sequence on the 20th-MAY APK is: dismiss OEM installer popups → wait for `language_screen` → tap `language_item_${LANGUAGE_CODE}` → tap `language_start_button` → wait up to 8s for the post-language notification permission dialog and grant it → land on `home_screen`. The helper short-circuits when `home_screen` is already visible (idempotent rerun) and keeps the older "Skip for now", `name_input`/`name_save_button`, and `location_interstitial_skip` steps behind `when: visible:` guards in case an older build is under test. When adding a new flow, start with this same `runFlow` line; do not duplicate onboarding steps inline.
 
 **Environment variables.** `config/env.yaml` is the single source of truth. `run_tests.sh` parses it at startup (`ENV_FLAGS` block near the top), exports each `KEY: VALUE` line as both a shell variable and a `--env KEY=VALUE` flag passed to Maestro. To add a new variable used by a flow, add it to `config/env.yaml` only — no runner edit needed. The parser is a bash regex that matches `^[A-Z_][A-Z0-9_]*:` so keys must be uppercase + underscores.
 
@@ -45,6 +45,27 @@ When debugging flakiness on a non-OPPO device, this whole machinery is a no-op (
 
 ## Conventions when editing flows
 
-- Use `id:` selectors over `text:` whenever the app exposes one (`home_screen`, `language_screen`, `name_input`, `language_item_${LANGUAGE_CODE}`, etc.) — text selectors break across language changes.
+- Use `id:` selectors over `text:` whenever the app exposes one (`home_screen`, `language_screen`, `chat_screen`, `language_item_${LANGUAGE_CODE}`, etc.) — text selectors break across language changes.
 - Wrap conditional steps in `runFlow: { when: { visible: ... }, commands: [...] }` rather than relying on `optional: true` alone, so a missing element doesn't fail the test but a present-but-broken element still does.
 - The flow filename prefix (`TC01_`, `TC02_`...) is parsed by `run_tests.sh` — the `TEST_CASES` array in the runner hardcodes IDs, filenames (without `.yaml`), names, descriptions, and priorities. Adding a new TC means editing both the flow and that array.
+- Before tapping a button that can render near the system nav bar (`content_card_start_chat_btn`, `chat_listen_btn`, `chat_suggested_questions` items), wrap it in `scrollUntilVisible … centerElement: true`. Without centering, Maestro's tap can land on the OS Home key and send the app to background — this regressed once already (commit `3502503`).
+- Maestro's `text:` matcher is **regex**. Anchor exact-match selectors: use `^Ask$` so a tap doesn't also match the composer hint `"Ask about your farm…"`.
+- Don't add `extendedWaitUntil` on `chat_screen` as a "wait for AI response" — the wrapper renders the instant the user lands and the wait is a 0-second no-op. Use a `scrollUntilVisible` to an end-of-answer marker (`chat_suggested_questions`, `chat_listen_btn`) with a long timeout instead; that's the implicit wait.
+
+## App testTag map (20th-MAY APK, v4.0.2)
+
+Full discovery notes with screen-by-screen output live in `docs/TAG_DISCOVERY.md`. Quick reference for tags the flows depend on:
+
+| Screen | Tag | Notes |
+| --- | --- | --- |
+| Language | `language_screen`, `language_item_<code>`, `language_start_button`, `language_list`, `language_all_languages_chip`, `language_legal_text`, `language_logo_mark` | First launch and post-logout entry. No separate privacy-policy screen — legal text is inline. |
+| Home | `home_screen`, `home_feed_list`, `home_hamburger_button`, `home_weather_button`, `home_feed_header`, `home_feed_card_<UUID>`, `content_card_start_chat_btn` | `primary_input_photo_btn` / `primary_input_speak_btn` / `primary_input_type_btn` render at the bottom. UUIDs in card ids change every load — match `home_feed_card_` as a prefix or use the contained `content_card_start_chat_btn`. |
+| Chat input bar (overlay after `primary_input_type_btn`) | `chat_camera_btn`, `chat_text_input`, `chat_voice_btn`, `chat_send_btn` | `chat_send_btn` only appears once `chat_text_input` has non-empty text. |
+| Chat answer (`chat_screen`) | `chat_screen`, `appbar_logo_left_btn`, `chat_listen_btn`, `chat_share_btn`, `chat_save_btn`, `chat_suggested_questions` | `chat_screen` is the always-visible wrapper. Use `chat_suggested_questions` (or `chat_listen_btn`) as the answer-finished signal. No `chat_thread_list` tag exists. |
+| Drawer | `drawer_container`, `drawer_home_btn`, `drawer_language_btn`, `drawer_settings_btn`, `drawer_help_btn`, `drawer_signup_card`, `drawer_signup_btn` | Slide-in from `home_hamburger_button`. |
+| Settings | `settings_screen`, `appbar_default_left_btn`, `settings_btn_appearance_day` / `_night` / `_auto`, `settings_name_edit_row`, `settings_btn_auth` | `settings_btn_auth` is the same tag for **Sign up** and **Logout** — text flips with auth state. There is no separate `settings_logout_button`. |
+| Auth (`auth_screen`) | `auth_screen`, `auth_country_code_btn`, `auth_phone_input`, `auth_send_sms_btn`, `auth_otp_input`, `auth_verify_btn` | Phone step uses `auth_send_sms_btn`; OTP step uses `auth_verify_btn`. Both used to be a single `auth_submit_button` — keep them split or the flow taps the wrong one. |
+| Account success | `account_success_screen`, `account_success_btn_continue` | |
+
+### Legacy / removed
+The first-launch flow on this APK does **not** show the privacy-policy screen, a "Skip for now" overlay, a name-entry screen (`name_input` / `name_save_button`), or a location-interstitial (`location_interstitial_skip`). The corresponding steps in `helpers/complete_onboarding.yaml` are kept behind `when: visible:` so older builds still pass through — do not remove them.
